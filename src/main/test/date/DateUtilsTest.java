@@ -1,12 +1,8 @@
 package date;
 
-import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.ZoneId;
-import java.util.Calendar;
-import java.util.Date;
 
 /**
  * @author leofee
@@ -46,7 +42,7 @@ class DateUtilsTest {
     static void nowTime() {
         LocalTime localTime = DateUtils.nowTime();
         System.out.println("当前时间为：" + localTime);
-        LocalTime tokyoTime = DateUtils.nowTime(ZoneId.of("Asia/Tokyo"));
+        LocalTime tokyoTime = DateUtils.nowTime("Asia/Tokyo");
         System.out.println("当前东京时间为：" + tokyoTime);
     }
 
