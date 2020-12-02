@@ -28,6 +28,9 @@ public class Account {
         return this.balance;
     }
 
+    /**
+     * 写方法加锁，读方法不加锁，会产生脏读
+     */
     public static void main(String[] args) throws InterruptedException {
         Account account = new Account();
 

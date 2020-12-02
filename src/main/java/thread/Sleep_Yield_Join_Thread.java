@@ -32,7 +32,7 @@ public class Sleep_Yield_Join_Thread {
         @Override
         public void run() {
             try {
-                Thread.sleep(1000);
+                Thread.sleep(500);
                 TimeUnit.SECONDS.sleep(1);
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -81,11 +81,11 @@ public class Sleep_Yield_Join_Thread {
         @Override
         public void run() {
             try {
-                System.out.println("先让 NormalThread 线程先执行");
+                System.out.println("先让 NormalThread 线程先执行" + "是否alive = " + normalThead.isAlive());
                 normalThead.join();
                 System.out.println("回到 JoinThread, NormalThread 线程状态为" + normalThead.getState());
 
-                System.out.println("再让 SleepThread 线程先执行500ms");
+                System.out.println("再让 SleepThread 线程先执行500ms" + "是否alive = " + normalThead.isAlive());
                 sleepThread.join(500);
                 System.out.println("回到 JoinThread, SleepThread 线程状态为" + sleepThread.getState());
             } catch (InterruptedException e) {

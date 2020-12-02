@@ -15,7 +15,8 @@ public class CreateThread {
 
         @Override
         public void run() {
-            System.out.println("new thread extends Thread, " + Thread.currentThread().getName());
+            System.out.println("new thread extends Thread, ThreadName = " + Thread.currentThread().getName()
+            + ",ThreadId = " + Thread.currentThread().getId());
         }
     }
 
