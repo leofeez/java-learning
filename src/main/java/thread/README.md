@@ -32,15 +32,21 @@ synchronized 是可重入锁，在同步方法中调用另外一个同步方法�
 synchronized用在方法上和synchronized(this){整个方法}是同等效果。
 
 synchronized(Object): 不能用String常量，Integer, Long, 字符串会存在常量池中
+并且锁住的对象不能指向别的实例，所以以对象作为锁的时候必须加final防止指向的地址发生改变。
 
 JDK 早期的时候，synchronized 是重量级的锁
+
+### 原理
+
 
 锁升级
 synchronized 默认情况下，使用偏向锁，如果有其他线程争用，升级为自旋锁，类似于while(i< 10) i++, 自旋10次
 如果此时还是无法获取到锁，则升级为重量级锁 OS锁
 改进后的synchronized并不比Automatic差
 
-自旋锁，会占用CPU，不经过内核态，效率高，适用于加锁的执行时间短，线程数不能多
+偏向锁:
+
+自旋锁，会占用CPU时间，不经过内核态，效率高，适用于加锁的执行时间短，线程数不能多
 OS锁（系统锁），适合执行时间长，线程数多
 
 ## 停止线程
@@ -49,3 +55,13 @@ OS锁（系统锁），适合执行时间长，线程数多
 - 使用interrupt()，该方法仅仅是在当前线程打了一个停止的标记，并不是真正的停止。
 
 
+## volatile
+作用如下：
+- 保证线程可见性：每个线程都有自己的工作空间
+    + MESI 缓存一致性协议
+- 禁止指令重排序
+    + DCL单例
+    
+## CAS 
+Compare And Swap
+AtomicInteger

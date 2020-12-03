@@ -1,10 +1,10 @@
-package thread;
+package thread.basic;
 
 /**
  * @author leofee
  * @date 2020/12/2
  */
-public class InterruptThread {
+public class InterruptExample {
 
     public static void main(String[] args) {
 
