@@ -1,4 +1,4 @@
-package thread.basic;
+package thread._interrupt;
 
 /**
  * @author leofee
@@ -12,8 +12,8 @@ public class InterruptExample {
 
         myThread.start();
         myThread.interrupt();
-        System.out.println(Thread.interrupted());
         System.out.println(myThread.isInterrupted());
+        System.out.println(Thread.currentThread().isInterrupted());
 
         // 标记线程为终止状态
         Thread.currentThread().interrupt();
@@ -21,6 +21,7 @@ public class InterruptExample {
         System.out.println(Thread.currentThread().isInterrupted());
         // interrupted 会对线程的状态标记进行清除
         System.out.println(Thread.interrupted());
+        // 所以这里输出false
         System.out.println(Thread.interrupted());
 
     }
