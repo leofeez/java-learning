@@ -63,5 +63,20 @@ OS锁（系统锁），适合执行时间长，线程数多
     + DCL单例
     
 ## CAS 
-Compare And Swap
-AtomicInteger
+Compare And Swap 又称乐观锁
+cas(expected, update);
+- AtomicInteger
+- LongAdder
+
+## LOCK 
+
+### ReentrantLock
+
+### CyclicBarrier
+
+### Phaser
+
+### ReadWriteLock
+- 共享锁
+
+- 排他锁
