@@ -24,6 +24,21 @@
 - blocked
 - terminated
 
+## 停止线程 interrupt
+真正的线程停止包含：
+- 当run() 方法执行完毕
+- 使用interrupt() 方法再配合其他方式停止，如 break, return , exception。
+- 使用stop() 方法，但是这个方法已经是过期作废的方法了，不推荐使用，会导致某些清理性的工作无法完成，
+也会导致对锁住的对象提前解锁产生数据的不一致性。
+
+interrupt()，该方法仅仅是在当前线程打了一个停止的标记，并不是真正的停止，所以是需要通过其他的方式配合来实现真正的线程终止，
+具体方法如下：
+- interrupt() + break;
+- interrupt() + return;
+- interrupt() + throw new InterruptedException();
+
+## 暂停线程 
+
 ## synchronized
 synchronized 是可重入锁，在同步方法中调用另外一个同步方法并不会死锁，因为两次获取的锁都是同一个。
 程序出现Exception则会释放锁。
@@ -48,12 +63,6 @@ synchronized 默认情况下，使用偏向锁，如果有其他线程争用，�
 
 自旋锁，会占用CPU时间，不经过内核态，效率高，适用于加锁的执行时间短，线程数不能多
 OS锁（系统锁），适合执行时间长，线程数多
-
-## 停止线程
-- 使用退出标记，使线程正常退出，也就是当run方法完成后线程终止。
-- 使用stop()强行终止线程，不推荐！stop() 和 suspend() 以及resume() 都是过期作废的方法。
-- 使用interrupt()，该方法仅仅是在当前线程打了一个停止的标记，并不是真正的停止。
-
 
 ## volatile
 作用如下：
