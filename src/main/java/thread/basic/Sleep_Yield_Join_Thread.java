@@ -13,12 +13,6 @@ public class Sleep_Yield_Join_Thread {
     private static Thread sleepThread;
 
     public static void main(String[] args) {
-
-//        new SleepThread().start();
-//        new YieldThread().start();
-//        new PrintNumThread().start();
-
-
         Thread joinThread = new JoinThread();
         normalThead = new NormalThread();
         sleepThread = new SleepThread();
@@ -38,32 +32,6 @@ public class Sleep_Yield_Join_Thread {
                 e.printStackTrace();
             }
             System.out.println("SleepThread " + Thread.currentThread().getName() + " 开始执行");
-        }
-    }
-
-    /**
-     * Thread.yield() 方法，使当前线程由执行状态，变成为就绪状态(Runnable)，
-     * 让出cpu时间，在下一个线程执行时候，此线程有可能被执行，也有可能没有被执行。
-     */
-    private static class YieldThread extends Thread {
-
-        @Override
-        public void run() {
-            for (int i = 0; i < 10; i++) {
-                if (i % 5 == 0) {
-                    Thread.yield();
-                }
-                System.out.println("YieldThread " + Thread.currentThread().getName() + " 正在执行, i = " + i);
-            }
-        }
-    }
-
-    private static class PrintNumThread extends Thread {
-        @Override
-        public void run() {
-            for (int i = 0; i < 10; i++) {
-                System.out.println("PrintNumThread " + Thread.currentThread().getName() + " 正在执行, i = " + i);
-            }
         }
     }
 
