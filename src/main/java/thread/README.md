@@ -100,3 +100,15 @@ cas(expected, update);
 - 共享锁
 
 - 排他锁
+
+### Semaphore
+限流，类似于车道和收费站
+
+
+## AQS
+
+VarHandle：
+- 普通属性原子性操作；
+- 比反射快，直接操纵二进制码
+
+## ThreadLocal
