@@ -6,7 +6,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author leofee
@@ -140,12 +139,6 @@ public class DateUtils {
         ThreadLocal<SimpleDateFormat> threadLocal = FORMATTER_CACHE.get(pattern);
         if (threadLocal == null) {
             synchronized (LOCK) {
-                System.out.println(Thread.currentThread().getName() + "获得锁");
-                try {
-                    TimeUnit.SECONDS.sleep(1);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
                 threadLocal = FORMATTER_CACHE.get(pattern);
                 if (threadLocal == null) {
                     threadLocal = ThreadLocal.withInitial(() -> new SimpleDateFormat(pattern));
