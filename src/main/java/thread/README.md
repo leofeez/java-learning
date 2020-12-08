@@ -63,6 +63,7 @@ synchronized(Object): 不能用String常量，Integer, Long, 字符串会存在�
 JDK 早期的时候，synchronized 是重量级的锁
 
 ### 原理
+synchronized锁住的是对象的头部的两位。
 
 
 锁升级
@@ -112,3 +113,10 @@ VarHandle：
 - 比反射快，直接操纵二进制码
 
 ## ThreadLocal
+用途：
+- 声明式事务，保证同一个Connection
+
+
+### Reference
+
+### 内存泄漏，内存溢出
