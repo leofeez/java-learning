@@ -113,10 +113,18 @@ VarHandle：
 - 比反射快，直接操纵二进制码
 
 ## ThreadLocal
-用途：
-- 声明式事务，保证同一个Connection
+ThreadLocal叫做线程变量，意思是ThreadLocal中填充的变量属于当前线程，该变量对其他线程而言是隔离的。
+ThreadLocal为变量在每个线程中都创建了一个副本，那么每个线程可以访问自己内部的副本变量。
 
+用途：
+- 线程间的数据隔离，实现线程安全：如SimpleDateFormat
+- 用于存储事务信息，如Spring的声明式事务，保证拿到的都是同一个Connection从而形成一个完整的事务。
+- 对象跨层传递：如存储用户信息，UserInfo，防止层与层之间多余的传递。
 
 ### Reference
+- 强引用：
+- 软引用：一个对象在被软引用指向的时候，只有内存不够了才会进行回收，一般用作缓存，如从内存中读取大图片。
+- 弱引用：弱引用一遇到gc就会被回收，如ThreadLocalMap中的Entry就是继承于WeakReference
+- 虚引用：
 
 ### 内存泄漏，内存溢出

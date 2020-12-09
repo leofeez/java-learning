@@ -1,4 +1,4 @@
-package thread._threadlocal;
+package thread._reference;
 
 import java.lang.ref.SoftReference;
 import java.util.concurrent.TimeUnit;
