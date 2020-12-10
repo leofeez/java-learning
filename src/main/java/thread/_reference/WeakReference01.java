@@ -18,12 +18,19 @@ import java.lang.ref.WeakReference;
 public class WeakReference01 {
 
     public static void main(String[] args) {
-        WeakReference<Person> weakReference = new WeakReference<>(new Person("李四"));
+        Person person = new Person("李四");
+        WeakReference<Person> weakReference = new WeakReference<>(person);
+        person = null;
 
-        System.out.println("垃圾回收前：" + weakReference.get());
+        WeakReference<Person> weakReference2 = new WeakReference<>(new Person("王五"));
+
+        System.out.println("垃圾回收前1：" + weakReference.get());
+        System.out.println("垃圾回收前2：" + weakReference2.get());
+
 
         System.gc();
 
-        System.out.println("垃圾回收后：" + weakReference.get());
+        System.out.println("垃圾回收后1：" + weakReference.get());
+        System.out.println("垃圾回收后2：" + weakReference2.get());
     }
 }
