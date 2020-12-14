@@ -21,7 +21,7 @@ public class PhantomReference01 {
      * 存放需要回收的虚引用，相当于通知
      * 当QUEUE里面有值时，然后清理堆外内存
      *
-     * 如：DirectByteBuffer 为直接内存，JVM无法直接回收
+     * 如：DirectByteBuffer 为直接内存，JVM无法直接回收，所以堆外内存需要JVM利用C/C++的函数进行内存回收
      */
     static ReferenceQueue<Person> QUEUE = new ReferenceQueue<>();
 
