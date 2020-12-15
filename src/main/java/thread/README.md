@@ -69,7 +69,7 @@ synchronized锁住的是对象的头部的两位。
 锁升级
 synchronized 默认情况下，使用偏向锁，如果有其他线程争用，升级为自旋锁，类似于while(i< 10) i++, 自旋10次
 如果此时还是无法获取到锁，则升级为重量级锁 OS锁
-改进后的synchronized并不比Automatic差
+改进后的synchronized并不比Atomic差
 
 偏向锁:
 
