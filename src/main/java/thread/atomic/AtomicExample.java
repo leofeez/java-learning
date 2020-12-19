@@ -24,6 +24,8 @@ public class AtomicExample {
         // 执行线程
         threadList.forEach(Thread::start);
 
+        // 因为主线程需要等待所有的子线程全部执行完，打印count值
+        // 所以利用join()
         threadList.forEach(t -> {
             try {
                 t.join();
@@ -31,6 +33,8 @@ public class AtomicExample {
                 e.printStackTrace();
             }
         });
+
+        // 输出所有线程执行完之后的count值
         System.out.println(example.count);
     }
 

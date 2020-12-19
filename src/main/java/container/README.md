@@ -3,8 +3,16 @@
 ### Collection
 
 #### 1. HashTable
+实现于Map接口，是一种存储key-value对的容器，的底层实现是基于哈希表，数组，链表，
+- 继承于`Dictionary`类
+- 是线程安全的，几乎所有的方法都加上了synchronized
+- key 和 value 都不允许为 `null`
 
 #### 2. HashMap
+- 继承于 `AbstractMap`类
+- 是非线程安全的
+- key 和 value 可以为 `null`
+- 
 
 #### 3. ConcurrentHashMap
 多线程读取元素快

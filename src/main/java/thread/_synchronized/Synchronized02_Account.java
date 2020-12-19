@@ -3,10 +3,12 @@ package thread._synchronized;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * 脏读
+ *
  * @author leofee
  * @date 2020/12/1
  */
-public class SynchronizedExample_Account {
+public class Synchronized02_Account {
 
     /**
      * 写方法加锁，读方法不加锁，会产生脏读

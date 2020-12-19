@@ -32,6 +32,10 @@ public class T02_HashMap {
             threadList.add(new MyThread(i));
         }
 
+        container.computeIfAbsent(UUID.randomUUID(), (k) -> {
+            return UUID.randomUUID();
+        });
+
         long start = System.currentTimeMillis();
 
         threadList.forEach(Thread::start);
