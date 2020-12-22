@@ -51,23 +51,7 @@ interrupt()，该方法仅仅是在当前线程打了一个停止的标记，并
 ## 暂停线程 
 
 ## synchronized
-synchronized 取得的锁都是对象锁，而不是把一段代码或者方法当做锁。
 
-synchronized 是可重入锁，在同步方法中调用另外一个同步方法可以直接获取到自己的内部锁，
-可重入锁也支持父子间的继承关系，这样就不会产生死锁，因为两次获取的锁都是同一个。
-
-程序出现Exception则会释放锁。
-
-写方法加synchronized，但是读方法不加synchronized则容易产生脏读。
-
-synchronized修饰符不支持继承，如果父类定了synchronized，子类重写方法要想实现同步，则也必须加synchronized。
-
-synchronized用在方法上和synchronized(this){整个方法}是同等效果，但是建议锁粒度越小越好，所以推荐使用synchronized代码块。
-
-synchronized(Object): 不能用String常量，Integer, Long, 字符串会存在常量池中
-并且锁住的对象不能指向别的实例，所以以对象作为锁的时候必须加final防止指向的地址发生改变。
-
-JDK 早期的时候，synchronized 是重量级的锁
 
 ### 原理
 synchronized锁住的是对象的头部的两位。
