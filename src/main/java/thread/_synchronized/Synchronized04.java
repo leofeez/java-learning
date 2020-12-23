@@ -5,7 +5,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author leofee
  */
-public class T02_Synchronized {
+public class Synchronized04 {
 
     private final Object LOCK = new Object();
 
@@ -26,8 +26,8 @@ public class T02_Synchronized {
      * synchronized 用在方法上则锁住当前调用的对象
      */
     public static void test1() throws InterruptedException {
-        T02_Synchronized A = new T02_Synchronized();
-        T02_Synchronized B = new T02_Synchronized();
+        Synchronized04 A = new Synchronized04();
+        Synchronized04 B = new Synchronized04();
 
         // 同一个对象调用同步方法
         new Thread(A::add, "A1").start();
@@ -55,8 +55,8 @@ public class T02_Synchronized {
      * synchronized(this)
      */
     public static void test2() throws InterruptedException {
-        T02_Synchronized A = new T02_Synchronized();
-        T02_Synchronized B = new T02_Synchronized();
+        Synchronized04 A = new Synchronized04();
+        Synchronized04 B = new Synchronized04();
 
         // 同一个对象调用同步方法
         new Thread(A::add2, "A1").start();
@@ -76,8 +76,8 @@ public class T02_Synchronized {
      * synchronized(Class)会对当前Class的所有实例加锁
      */
     public static void test3() throws InterruptedException {
-        T02_Synchronized A = new T02_Synchronized();
-        T02_Synchronized B = new T02_Synchronized();
+        Synchronized04 A = new Synchronized04();
+        Synchronized04 B = new Synchronized04();
 
         // 同一个对象调用同步方法
         new Thread(A::add3, "A1").start();
@@ -97,8 +97,8 @@ public class T02_Synchronized {
      * synchronized 用在 static 方法上会对当前Class的所有实例加锁
      */
     public static void test4() throws InterruptedException {
-        T02_Synchronized A = new T02_Synchronized();
-        T02_Synchronized B = new T02_Synchronized();
+        Synchronized04 A = new Synchronized04();
+        Synchronized04 B = new Synchronized04();
 
         // 同一个对象调用同步方法
         new Thread(() -> A.add4(), "A1").start();
@@ -118,8 +118,8 @@ public class T02_Synchronized {
      * synchronized 用在 LOCK 成员变量上
      */
     public static void test5() throws InterruptedException {
-        T02_Synchronized A = new T02_Synchronized();
-        T02_Synchronized B = new T02_Synchronized();
+        Synchronized04 A = new Synchronized04();
+        Synchronized04 B = new Synchronized04();
 
         // 同一个对象调用
         new Thread(A::add5, "A1").start();
@@ -168,7 +168,7 @@ public class T02_Synchronized {
     }
 
     public void add3() {
-        synchronized (T02_Synchronized.class) {
+        synchronized (Synchronized04.class) {
             System.out.println(Thread.currentThread().getName());
 
             try {
