@@ -50,12 +50,16 @@ interrupt()，该方法仅仅是在当前线程打了一个停止的标记，并
 
 ## 暂停线程 
 
+## 死锁
+在设计程序的时候一定要避免双方互相持有对方的锁的情况。
+
 ## synchronized
+如果某一个资源被多个线程共享，为了避免因为资源抢占导致资源数据错乱，即线程安全问题，这时候需要对线程进行同步，
+那么synchronized就是实现线程同步的关键字，可以说在并发控制中是必不可少的部分。
 
+具体见[synchronized原理分析](https://github.com/leofeez/java-learning/blob/master/src/main/java/thread/_synchronized/README.md)
 
-### 原理
-synchronized锁住的是对象的头部的两位。
-
+## 锁的分类
 
 锁升级
 synchronized 默认情况下，使用偏向锁，如果有其他线程争用，升级为自旋锁，类似于while(i< 10) i++, 自旋10次
@@ -111,6 +115,8 @@ ThreadLocal为变量在每个线程中都创建了一个副本，那么每个线
 - 线程间的数据隔离，实现线程安全：如SimpleDateFormat
 - 用于存储事务信息，如Spring的声明式事务，保证拿到的都是同一个Connection从而形成一个完整的事务。
 - 对象跨层传递：如存储用户信息，UserInfo，防止层与层之间多余的传递。
+
+具体分析见[ThreadLocal源码分析](https://github.com/leofeez/java-learning/blob/master/src/main/java/thread/_threadlocal/README.md)
 
 ### Reference
 - 强引用：

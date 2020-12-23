@@ -4,7 +4,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
 
 /**
- * 在同步代码块基于指定对象作为锁对象的时候，一定要保证为final类型
+ * 在同步代码块基于指定对象作为锁对象（对象监视器）的时候，一定要保证为final类型
  *
  * @author leofee
  * @date 2020/12/23
@@ -19,6 +19,8 @@ public class Synchronized05 {
         Thread B = new Thread(obj::print2, "B");
 
         A.start();
+        // 如果不加该行代码，两个线程还是会同步的去执行，因为这时候两个线程进入同步代码块
+        // 前已经产生了互斥的行为，或者说有一个线程必定会被阻塞
         TimeUnit.SECONDS.sleep(5);
         B.start();
     }
