@@ -78,6 +78,16 @@ OS锁（系统锁），适合执行时间长，线程数多
 - 禁止指令重排序
     + DCL单例
     
+volatile最大的缺点就是无法保证原子性。
+
+synchronized与volatile的区别如下：
+- volatile是线程同步的轻量级实现，所以volatile的性能肯定是比synchronized好，volatile只能修饰变量，
+而synchronized可以修饰方法，代码块，在新的JDK中也对synchronized进行了优化，性能也不差。
+- 多线程之间使用volatile并不会阻塞线程，synchronized会阻塞线程。
+- volatile能保证数据的可见性，但是不能保证原子性，而synchronized可以保证原子性，也可以间接的保证可见性，因为
+它会将私有内存和公共内存中的数据进行同步。
+- volatile 只是实现可见性，synchronized解决的是线程之间对同一个资源的操作的同步性。
+    
 ## CAS 
 Compare And Swap 又称乐观锁
 cas(expected, update);
