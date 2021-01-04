@@ -6,7 +6,7 @@ import java.util.*;
  * @author leofee
  * @date 2020/12/14
  */
-public class T02_HashMap {
+public class T02_SynchronizedMap {
 
     public static int thread_count = 100;
 

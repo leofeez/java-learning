@@ -112,6 +112,20 @@ public class Synchronized04 {
         new Thread(() -> A.add4(), "A2").start();
         new Thread(() -> B.add4(), "B2").start();
 
+
+        TimeUnit.SECONDS.sleep(2);
+        System.out.println("------synchronized static 3--------");
+
+        // 一个是对象一个是类
+        new Thread(() -> A.add4(), "A3").start();
+        new Thread(Synchronized04::add4, "B3").start();
+
+        TimeUnit.SECONDS.sleep(2);
+        System.out.println("------synchronized static 4--------");
+
+        // 一个是对象一个是类
+        new Thread(() -> A.add6(), "A4").start();
+        new Thread(Synchronized04::add6, "B4").start();
     }
 
     /**
@@ -197,6 +211,16 @@ public class Synchronized04 {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+        }
+    }
+
+    public static void add6() {
+        System.out.println(Thread.currentThread().getName());
+
+        try {
+            TimeUnit.SECONDS.sleep(1);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
 
