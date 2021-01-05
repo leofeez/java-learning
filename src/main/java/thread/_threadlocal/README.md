@@ -2,12 +2,12 @@
 ThreadLocal叫做线程变量，意思是ThreadLocal中填充的变量属于当前线程，该变量对其他线程而言是隔离的。ThreadLocal为变量在每个线程中都创建了
 一个副本，那么每个线程可以访问自己内部的副本变量。
 
-###用途
+### 用途
 - 线程间的数据隔离，实现线程安全：如SimpleDateFormat
 - 用于存储事务信息，如Spring的声明式事务，保证拿到的都是同一个Connection从而形成一个完整的事务。
 - 对象跨层传递：如存储用户信息，UserInfo，防止层与层之间多余的传递。
 
-###原理
+### 原理
 每个`Thread`线程对象都持有一个`ThreadLocalMap`变量用来存储线程内部的一些属性，如下：
 ```java
     /* ThreadLocal values pertaining to this thread. This map is maintained

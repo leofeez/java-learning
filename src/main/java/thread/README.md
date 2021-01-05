@@ -18,12 +18,15 @@
 - join : 当我们调用某个线程的这个方法时，这个方法会挂起调用线程，直到被调用线程结束执行，调用线程才会继续执行。
 
 线程的六种状态：
-- new
-- runnable:
-- waiting:
-- time_waiting
-- blocked
-- terminated
+- new：当创建线程时，线程就处于new新建状态
+- runnable:就绪状态，当创建的线程调用start()方法表示线程处于就绪状态，等待系统调度。
+- running: 运行状态，就绪状态的线程获得CPU资源时进入运行状态，Running和Runnable状态可以互相切换，有可能线程Running一段时间后被某个高
+优先级的线程强占了CPU的资源，此时线程就从Running状态转变为Runnable状态。
+- waiting: 调用wait()，当前线程放弃CPU资源，进度线程等待池中，这种状态线程无法自动唤醒，需要等待其他线程调用notify()或者notifyAll()，
+还有就是join()，sleep()方法或者遇到一个阻塞的IO操作。
+- time_waiting: join(time), sleep(time)
+- blocked：阻塞状态，线程尝试获取同步锁，若同步锁正在被其他线程持有，从而进入阻塞状态。
+- terminated：指线程执行完了或者线程执行时发生了异常
 
 线程的优先级
 线程的优先级分为1~10个等级

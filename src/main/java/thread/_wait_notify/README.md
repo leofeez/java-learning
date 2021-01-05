@@ -9,4 +9,6 @@ notify()：作用是通知那些正在等待该对象锁的线程，如果有多
 注意的是，在执行notify()当前线程不会立即释放锁，而是要等退出当前synchronized方法或者代码块，当前线程才会释放锁，其他wait线程才能真正
 获取到锁。
 
-wait() 和 notify()方法调用前都需要先获得锁，否则会抛出`IllegalMonitorStateException`
+wait() 和 notify()方法调用前都需要先获得锁，否则会抛出`IllegalMonitorStateException`。
+wait(time)支持指定时间，但是前提是必须是能够拿到锁才会继续执行。
+notify方法不能比wait()方法先执行，否则wait的线程不能被正常唤醒，可以设置wait的时间。
