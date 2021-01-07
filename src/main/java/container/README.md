@@ -1,8 +1,8 @@
-## 容器
+# 容器
 
-### Collection
+## Collection
 
-#### 1. HashTable
+### 1. HashTable
 实现于Map接口，是一种存储key-value对的容器，的底层实现是基于哈希表，数组，链表，
 - 继承于`Dictionary`类
 - 是线程安全的，几乎所有的方法都加上了synchronized
@@ -10,7 +10,7 @@
 - 默认的初始容量为 11，负载因子为0.75
 - 扩容机制为原容量的两倍 + 1
 
-#### 2. HashMap
+### 2. HashMap
 底层数据结构为哈希表，数组，链表，红黑树（当链表的长度大于等8时，链表会转换为红黑树结构）。
 - 继承于 `AbstractMap`类
 - 非线程安全的
@@ -18,7 +18,7 @@
 - 默认的初始容量为16，负载因子为0.75，扩容的阈值为 capacity * loadFactor
 - 扩容机制为原容量的两倍
 
-HashMap重要的几个属性：
+#### HashMap重要的几个属性：
 ```java
     // 默认的初始化容量，16，必须为2的幂
     static final int DEFAULT_INITIAL_CAPACITY = 1 << 4; // aka 16
@@ -51,9 +51,9 @@ HashMap重要的几个属性：
     // 负载因子
     final float loadFactor;
 ```
-
+#### HashMap的初始化
 HashMap提供了无参构造和指定初始容量的构造方法。
-HashMap初始化的时候默认的容量是16，扩容的阈值为12
+HashMap初始化的时候默认的容量是16，扩容的阈值和容量相等。
 ```java
     public HashMap(int initialCapacity, float loadFactor) {
         // 初始容量小于0则抛出异常
@@ -74,49 +74,126 @@ HashMap初始化的时候默认的容量是16，扩容的阈值为12
         this.threshold = tableSizeFor(initialCapacity);
     }
 ```
-
+#### HashMap容量为什么要设置为2的幂次方整数
 关于HashMap的容量为什么要设置为2的幂次方整数，原因是在putVal的时候需要计算table的index，即entry在table的索引，
 计算index的原理就是利用(capacity -1) & hash，当容量capacity设置为2的幂次方时，(capacity-1)之后的二进制码
 最高为之后可以保证全是1，如：
  - 容量为8， 对应的7 的二进制码为0000 0111
  - 容量为16，对应的15的二进制码为0000 1111
  
-这样对hashCode进行按位与&计算之后可以保证结果既可以是基数也可以是偶数，只要对应的key的hashCode算法足够好，就可以
+这样对hashCode进行按位与&计算之后可以保证结果既可以是基数也可以是偶数，而且结果和hashCode的后几位有关系，只要对应的key的hashCode算法足够好，就可以
 有效减少hash碰撞的几率。
 
-HashMap在初始化建议根据实际情况设置初始容量大小，规则为 expectedSize/loadFactor + 1，而实际上HashMap会采用第一个大于该数值的2的幂作为初始化容量，
+HashMap在初始化建议根据实际情况设置初始容量大小，实际上HashMap会采用第一个大于该数值的2的幂作为初始化容量，
 指定初始化容量可以有效减少HashMap的扩容resize次数，因为在进行扩容时会导致重建hash表非常影响性能。
 
+#### HashMap添加元素的过程
+HashMap对table的初始化是在第一次put元素的时候，HashMap进行put元素的过程如下：
+1. table为空，为空则调用`resize()`方法初始化table数组。
+2. table不为空，则根据key的`(table的长度-1) & hashCode`定位到table数组对应的元素
+    - 如果table对应的元素为null，则直接放置在table对应的位置
+    - 如果table对应的元素不为null，这时候说明产生了hash碰撞，而HashMap对hash碰撞的处理方式是利用链表或者红黑树，
+        当table对应的元素为TreeNode，则放置到红黑树对应的节点，如果不是红黑树结构，这时候就需要遍历链表
+        * 遍历链表时发现对应的key已经存在，则进行value覆盖
+        * 遍历链表时发现对应的key不存在，则新建一个节点追加到链表的尾部，当追加后的链表长度大于树形阈值，则将链表转换为红黑树。
+3. 添加元素后如果table的长度大于扩容的阈值threshold，则进行resize扩容。
+```java
+    public V put(K key, V value) {
+        // 计算key对应的hashCode再put
+        return putVal(hash(key), key, value, false, true);
+    }
+      
+    final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
+                   boolean evict) {
+        Node<K,V>[] tab; Node<K,V> p; int n, i;
+        // 如果table为空则调用resize进行初始化
+        if ((tab = table) == null || (n = tab.length) == 0)
+            n = (tab = resize()).length;
+
+        // 计算index，然后获取index位置所在元素
+        // 如果index对应的元素为null
+        if ((p = tab[i = (n - 1) & hash]) == null)
+            // 新建一个Node，将Node放置在table[index]位置
+            tab[i] = newNode(hash, key, value, null);
+
+        // 如果index对应的元素不为null
+        else {
+            Node<K,V> e; K k;
+            // 则判断已经存在的元素的hashCode，key是否和新元素相等
+            if (p.hash == hash &&
+                ((k = p.key) == key || (key != null && key.equals(k))))
+                // hashCode 和 key 都相等则直接覆盖
+                e = p;
+            // 如果已经存在的元素为红黑树的实例，则放置到树对应的节点
+            else if (p instanceof TreeNode)
+                e = ((TreeNode<K,V>)p).putTreeVal(this, tab, hash, key, value);
+            // 已经存在的元素的hashCode相等
+            else {
+                // 遍历链表
+                for (int binCount = 0; ; ++binCount) {
+                    // 下一个节点为null则追加到链表尾部（尾插法）
+                    if ((e = p.next) == null) {
+                        p.next = newNode(hash, key, value, null);
+                        // 追加后链表的长度如果大于转换红黑树的阈值，则将链表转换为红黑树结构
+                        if (binCount >= TREEIFY_THRESHOLD - 1) // -1 for 1st
+                            treeifyBin(tab, hash);
+                        break;
+                    }
+                    // 如果遍历链表时发现链表元素的hashCode 和 key相等则直接覆盖
+                    if (e.hash == hash &&
+                        ((k = e.key) == key || (key != null && key.equals(k))))
+                        break;
+                    p = e;
+                }
+            }
+            // 返回覆盖前的value
+            if (e != null) { // existing mapping for key
+                V oldValue = e.value;
+                if (!onlyIfAbsent || oldValue == null)
+                    // 对value赋值
+                    e.value = value;
+                afterNodeAccess(e);
+                return oldValue;
+            }
+        }
+        ++modCount;
+        // size加1
+        // size增加后如果大于扩容的阈值，则进行扩容
+        if (++size > threshold)
+            resize();
+        afterNodeInsertion(evict);
+        return null;
+    }
+```
 
 
-
-1.8 对HashMap的改进
+#### 1.8 对HashMap的改进
 - 1.7 中 HashMap的底层实现是数组 + 单链表，1.8底层实现增加了红黑树，当链表的长度大于等于8（默认）时将链表转换为红黑树。
-- 1.7 中 HashMap的链表使用头插法，get()时会出现死循环。
+- 1.7 中 HashMap的链表使用头插法，多线程的情况下可能会产生链表的闭环，导致死循环，1.8之后，链表添加元素使用尾插法。
 
-#### 3. Collections.synchronizedMap
+### 3. Collections.synchronizedMap
 `Collections.synchronizedMap`方法是jdk提供的用于返回一个线程安全的Map.
 底层实现原理就是`Collections`里维护了一个`SynchronizedMap`内部类，该内部类有两个属性，一个就是传入的map对象，另外一个就是锁对象，默认情况下
 锁对象就是`SynchronizedMap`，然后对传入map的操作时都会在外层加上synchronized代码块，锁对象默认就是`SynchronizedMap`本身，从而实现线程安全。
 
-#### 3. ConcurrentHashMap
+### 3. ConcurrentHashMap
 多线程读取元素快
 
-#### 4. Vector
+### 4. Vector
 
-#### 5. Queue
+### 5. Queue
 多线程程序多用queue少考虑List
 
-#### 6. TreeMap
+### 6. TreeMap
 
-#### 7. ConcurrentSkipListMap
+### 7. ConcurrentSkipListMap
 利用跳表的数据结构
 
-#### 8. CopyOnWriteArrayList
+### 8. CopyOnWriteArrayList
 写时复制
 
-#### 9. BlockingQueue
+### 9. BlockingQueue
 生产者/消费者
 
-#### 10. DelayQueue/PriorityQueue
+### 10. DelayQueue/PriorityQueue
 支持排序
