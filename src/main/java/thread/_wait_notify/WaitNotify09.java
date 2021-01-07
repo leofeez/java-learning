@@ -1,6 +1,5 @@
 package thread._wait_notify;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -10,32 +9,64 @@ import java.util.concurrent.TimeUnit;
  * @author leofee
  * @date 2021/1/5
  */
-public class WaitNotify08 extends Thread {
+public class WaitNotify09 extends Thread {
 
     private final List<String> list = new ArrayList<>();
 
-    public WaitNotify08() {
+    public WaitNotify09() {
     }
 
-    public WaitNotify08(Runnable runnable, String name) {
+    public WaitNotify09(Runnable runnable, String name) {
         super(runnable, name);
     }
 
-    public static void main(String[] args) {
+    /**
+     * 在多个线程的情况，如果使用wait()，则需要使用notifyAll(),否则会产生假死，导致所有线程都在waiting状态
+     * @param args
+     * @throws InterruptedException
+     */
+    public static void main(String[] args) throws InterruptedException {
 
-        WaitNotify08 object = new WaitNotify08();
+        WaitNotify09 object = new WaitNotify09();
 
-        new WaitNotify08(() -> {
+        WaitNotify09 producer01 = new WaitNotify09(() -> {
             while (true) {
                 object.produce();
             }
-        }, "生产者").start();
+        }, "生产者1");
 
-        new WaitNotify08(() -> {
+        WaitNotify09 producer02 = new WaitNotify09(() -> {
+            while (true) {
+                object.produce();
+            }
+        }, "生产者2");
+
+        WaitNotify09 consumer01 = new WaitNotify09(() -> {
             while (true) {
                 object.consume();
             }
-        }, "消费者").start();
+        }, "消费者1");
+
+        WaitNotify09 consumer02 = new WaitNotify09(() -> {
+            while (true) {
+                object.consume();
+            }
+        }, "消费者2");
+
+        List<Thread> threads = new ArrayList<>();
+        threads.add(producer01);
+        threads.add(producer02);
+        threads.add(consumer01);
+        threads.add(consumer02);
+
+        threads.forEach(Thread::start);
+
+        TimeUnit.SECONDS.sleep(10);
+
+
+        threads.forEach(thread -> {
+            System.out.println(thread.getName() + thread.getState());
+        });
     }
 
     ;
@@ -43,7 +74,7 @@ public class WaitNotify08 extends Thread {
     public synchronized void produce() {
         if (list.size() > 0) {
             try {
-                notifyAll();
+                notify();
                 wait();
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -69,7 +100,7 @@ public class WaitNotify08 extends Thread {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            notifyAll();
+            notify();
         } else {
             try {
                 wait();
