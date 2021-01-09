@@ -3,20 +3,13 @@
 ## Collection
 
 ### 1. HashTable
-实现于Map接口，是一种存储key-value对的容器，的底层实现是基于哈希表，数组，链表，
-- 继承于`Dictionary`类
-- 是线程安全的，几乎所有的方法都加上了synchronized
-- key 和 value 都不允许为 `null`
-- 默认的初始容量为 11，负载因子为0.75
-- 扩容机制为原容量的两倍 + 1
 
 ### 2. HashMap
+实现于Map接口，是一种存储key-value对的容器。
 底层数据结构为哈希表，数组，链表，红黑树（当链表的长度大于等8时，链表会转换为红黑树结构）。
-- 继承于 `AbstractMap`类
-- 非线程安全的
-- key 和 value 可以为 `null`
-- 默认的初始容量为16，负载因子为0.75，扩容的阈值为 capacity * loadFactor
-- 扩容机制为原容量的两倍
+数组和链表都有其各自的优点和缺点，数组连续存储，寻址容易，插入删除操作相对困难；而链表离散存储，寻址相对困难，而插入删除操作容易；
+而HashMap结合了这两种数据结构，保留了各自的优点，又弥补了各自的缺点
+
 
 #### HashMap重要的几个属性：
 ```java
@@ -85,7 +78,42 @@ HashMap初始化的时候默认的容量是16，扩容的阈值和容量相等�
 有效减少hash碰撞的几率。
 
 HashMap在初始化建议根据实际情况设置初始容量大小，实际上HashMap会采用第一个大于该数值的2的幂作为初始化容量，
-指定初始化容量可以有效减少HashMap的扩容resize次数，因为在进行扩容时会导致重建hash表非常影响性能。
+指定初始化容量可以有效减少HashMap的扩容resize次数，因为在进行扩容时会导致重建hash表，重建hash表需要重新计算这些数据在新table数组中的位置并进行复制处理。
+
+#### HashMap的哈希算法
+在HashMap添加元素的时候需要根据key计算对应的hashCode然后再确定该元素对应的数组下标，计算下标的算法为`(capacity -1) & hash`，上面已经解释了
+为什么要用`(capacity -1)`对key的hashCode进行按位与&计算，而对应的hash值在HashMap中也进行了一些处理，不是直接用key.hashCode()作为hash值，
+HashMap的hash算法源码如下：
+```java
+    static final int hash(Object key) {
+        int h;
+        return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
+    }
+```
+引用自[HashMap的hash算法](https://www.cnblogs.com/LiaHon/p/11149644.html)
+为了减少hash碰撞的几率，在HashMap中就通过上述的hash(Object key)算法将hashcode 与 hashcode的低16位做异或运算，混合了高位和低位得出的
+最终hash值，冲突的概率就小多了。
+
+举个例子：
+有个蒸笼，第一层是猪肉包、牛肉包、鸡肉包，第二层是白菜包，第三层是豆沙包，第四层是香菇包。这时你来买早餐，你指着第一层说除了猪肉包，随便给我一个包子，
+因为外表无法分辨，这时拿到猪肉包的概率就有1/3，如果将二层、三层、四层与一层混合在一起了，那么拿到猪肉包的概率就小多了。
+
+我们的hash(Object key)算法一个道理，最终的hash值混合了高位和低位的信息，掺杂的元素多了，那么最终hash值的随机性越大，
+而HashMap的table下标依赖于最终hash值与capacity-1的&运算，这里的&运算类似于挑包子的过程，自然冲突就小得多了。
+
+计算过程如下：
+
+- 最开始的hashCode              `1111 1111 1111 1111 0100 1100 0000 1010`
+-                                       >>> 无符号右移16位
+- 右移16位的hashCode            `0000 0000 0000 0000 1111 1111 1111 1111`
+-                                    hashCode ^ (hashCode >>> 16)
+- 异或运算后的hash值             `1111 1111 1111 1111 1011 0011 1111 0101`
+-                                      (capacity - 1) & hash
+- capacity-1，如16，的hash值    `0000 0000 0000 0000 0000 0000 0000 1111`
+
+- 得到最终的数组下标index         `0000 0000 0000 0000 0000 0000 0000 0101`
+
+这样的过程叫做扰动函数。
 
 #### HashMap添加元素的过程
 HashMap对table的初始化是在第一次put元素的时候，HashMap进行put元素的过程如下：
@@ -170,6 +198,21 @@ HashMap对table的初始化是在第一次put元素的时候，HashMap进行put�
 #### 1.8 对HashMap的改进
 - 1.7 中 HashMap的底层实现是数组 + 单链表，1.8底层实现增加了红黑树，当链表的长度大于等于8（默认）时将链表转换为红黑树。
 - 1.7 中 HashMap的链表使用头插法，多线程的情况下可能会产生链表的闭环，导致死循环，1.8之后，链表添加元素使用尾插法。
+
+#### HashMap和HashTable的区别
+HashTable:
+- 继承于`Dictionary`类
+- 是线程安全的，几乎所有的方法都加上了synchronized
+- key 和 value 都不允许为 `null`
+- 默认的初始容量为 11，负载因子为0.75
+- 扩容机制为原容量的两倍 + 1
+
+HashMap:
+- 继承于 `AbstractMap`类
+- 非线程安全的
+- key 和 value 可以为 `null`
+- 默认的初始容量为16，负载因子为0.75，扩容的阈值为 capacity * loadFactor
+- 扩容机制为原容量的两倍
 
 ### 3. Collections.synchronizedMap
 `Collections.synchronizedMap`方法是jdk提供的用于返回一个线程安全的Map.
