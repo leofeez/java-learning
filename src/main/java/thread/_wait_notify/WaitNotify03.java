@@ -6,19 +6,27 @@ import java.util.concurrent.TimeUnit;
  * @author leofee
  * @date 2020/12/30
  */
-public class WaitNotify03 {
+public class WaitNotify03 extends Thread {
+
+    public WaitNotify03() {
+    }
+
+    public WaitNotify03(Runnable target, String name) {
+        super(target, name);
+    }
+
+    private static final WaitNotify03 LOCK = new WaitNotify03();
 
     private int count = 0;
 
     public static void main(String[] args) {
-        WaitNotify03 object = new WaitNotify03();
 
-        new Thread(() -> {
-            synchronized (object) {
-                if (object.count < 5) {
+        new WaitNotify03(() -> {
+            synchronized (LOCK) {
+                if (LOCK.count < 5) {
                     System.out.println("count 当前小于 5 ，开始wait......");
                     try {
-                        object.wait();
+                        LOCK.wait();
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -26,28 +34,25 @@ public class WaitNotify03 {
                 }
                 System.out.println("count 已经等于 5 了，结束wait......");
             }
-        }).start();
+        }, "线程A").start();
 
-        new Thread(() -> {
-            synchronized (object) {
+        new WaitNotify03(() -> {
+            synchronized (LOCK) {
                 while (true) {
-                    object.count++;
+                    LOCK.count++;
                     try {
                         TimeUnit.SECONDS.sleep(1);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
-                    System.out.println(object.count);
-                    if (object.count == 5) {
+                    System.out.println(LOCK.count);
+                    if (LOCK.count == 5) {
                         System.out.println("count 已经等于 5 了，开始notify......");
-                        object.notify();
+                        LOCK.notify();
                         break;
                     }
                 }
-
             }
-        }).start();
-
-
+        }, "线程B").start();
     }
 }

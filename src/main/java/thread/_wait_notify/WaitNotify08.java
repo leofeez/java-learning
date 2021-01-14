@@ -1,6 +1,5 @@
 package thread._wait_notify;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -21,6 +20,9 @@ public class WaitNotify08 extends Thread {
         super(runnable, name);
     }
 
+    /**
+     * 一个生产者和一个消费者交替执行
+     */
     public static void main(String[] args) {
 
         WaitNotify08 object = new WaitNotify08();
@@ -38,12 +40,9 @@ public class WaitNotify08 extends Thread {
         }, "消费者").start();
     }
 
-    ;
-
     public synchronized void produce() {
         if (list.size() > 0) {
             try {
-                notifyAll();
                 wait();
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -56,6 +55,7 @@ public class WaitNotify08 extends Thread {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+            notifyAll();
         }
 
     }

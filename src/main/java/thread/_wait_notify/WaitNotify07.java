@@ -36,9 +36,9 @@ public class WaitNotify07 extends Thread {
             synchronized (LOCK) {
                 try {
                     System.out.println(Thread.currentThread().getName() + ", wait开始......");
-                    // 如果 notify方法比wait方法先执行，则wait的线程会无法得到唤醒，将持续阻塞
-                    LOCK.wait();
-                    /*LOCK.wait(1000);*/
+                    // 如果 notify方法比wait方法先执行，则wait如果不指定超时时间，则线程会无法得到唤醒，将持续阻塞
+                    // 而指定超时时间后，超过该时间如果能获取到锁，则会停止wait()
+                    LOCK.wait(1000);
                     System.out.println(Thread.currentThread().getName() + ", wait结束......");
                 } catch (InterruptedException e) {
                     e.printStackTrace();

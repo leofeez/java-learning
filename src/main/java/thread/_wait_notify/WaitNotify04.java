@@ -15,8 +15,7 @@ public class WaitNotify04 extends Thread {
     }
 
     /**
-     * 如果正在wait()的线程遇到了异常，会直接终止线程
-     * @param args
+     * 如果正在wait()的线程遇到了异常，会释放锁并直接终止线程
      */
     public static void main(String[] args) {
         Thread A = new WaitNotify04(() -> {

@@ -61,7 +61,7 @@ public class WaitNotify09 extends Thread {
 
         threads.forEach(Thread::start);
 
-        TimeUnit.SECONDS.sleep(10);
+        TimeUnit.SECONDS.sleep(15);
 
 
         threads.forEach(thread -> {
@@ -74,7 +74,6 @@ public class WaitNotify09 extends Thread {
     public synchronized void produce() {
         if (list.size() > 0) {
             try {
-                notify();
                 wait();
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -83,10 +82,11 @@ public class WaitNotify09 extends Thread {
             list.add(UUID.randomUUID().toString());
             System.out.println(Thread.currentThread().getName() + ", 生产了 " + list.get(0));
             try {
-                TimeUnit.SECONDS.sleep(1);
+                Thread.sleep(500);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+            notify();
         }
 
     }
@@ -96,7 +96,7 @@ public class WaitNotify09 extends Thread {
             String remove = list.remove(0);
             System.out.println(Thread.currentThread().getName() + ", 消费了 " + remove);
             try {
-                TimeUnit.SECONDS.sleep(1);
+                Thread.sleep(500);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

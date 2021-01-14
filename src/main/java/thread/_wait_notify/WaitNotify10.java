@@ -10,25 +10,47 @@ import java.util.UUID;
  */
 public class WaitNotify10 extends Thread {
 
+    private List<String> list = new ArrayList<>();
+
+    public WaitNotify10() {
+    }
+
     public WaitNotify10(Runnable target, String name) {
         super(target, name);
     }
 
+    /**
+     * 在多消费者的情况下，wait()的方式应该使用
+     * <pre>
+     *     while (waitCondition) {
+     *         wait();
+     *     }
+     *     // 其他业务代码
+     * </pre>
+     * 否则如果将上述的 while 替换成 if 则当线程被唤醒时，
+     * 就直接执行业务代码而会跳过waitCondition的条件判断
+     */
     public static void main(String[] args) throws InterruptedException {
         List<WaitNotify10> threads = new ArrayList<>();
 
-        MyStack stack = new MyStack();
+        WaitNotify10 obj = new WaitNotify10();
 
         String producerName = "生产者";
         for (int i = 0; i < 1; i++) {
-            Producer producer = new Producer(stack);
-            threads.add(new WaitNotify10(producer::produce, producerName + (i + 1)));
+            threads.add(new WaitNotify10(() -> {
+                while (true) {
+                    obj.produce();
+                }
+            }, producerName + (i + 1)));
         }
 
         String consumerName = "消费者";
         for (int i = 0; i < 2; i++) {
-            Consumer consumer = new Consumer(stack);
-            threads.add(new WaitNotify10(consumer::consume, consumerName + (i + 1)));
+            threads.add(new WaitNotify10(() -> {
+                while (true) {
+                    obj.consume();
+                }
+            }, consumerName + (i + 1)));
         }
 
         threads.forEach(WaitNotify10::start);
@@ -39,65 +61,42 @@ public class WaitNotify10 extends Thread {
 
     }
 
-    /**
-     * 生产者
-     */
-    static class Producer {
-        private MyStack stack;
-
-        public Producer(MyStack stack) {
-            this.stack = stack;
+    synchronized void produce() {
+//        if (list.size() == 1) {
+        while (list.size() == 1) {
+            try {
+                wait();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
-
-        public void produce() {
-            stack.push();
+        String element = UUID.randomUUID().toString();
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
+        System.out.println(Thread.currentThread().getName() + " 生产了 " + element);
+        list.add(element);
+        notifyAll();
     }
 
-    /**
-     * 消费者
-     */
-    static class Consumer {
-        private MyStack stack;
-
-        public Consumer(MyStack stack) {
-            this.stack = stack;
-        }
-
-        public void consume() {
-            stack.pop();
-        }
-    }
-
-    static class MyStack {
-
-        private List<String> list = new ArrayList<>();
-
-        synchronized void push() {
-            if (list.size() == 1) {
-                try {
-                    wait();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+    synchronized void consume() {
+//        if (list.size() == 0) {
+        while (list.size() == 0) {
+            try {
+                this.wait();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
-            String element = UUID.randomUUID().toString();
-            System.out.println(Thread.currentThread().getName() + " 生产了 " + element);
-            list.add(element);
-            notifyAll();
         }
-
-        synchronized void pop() {
-            if (list.size() == 0) {
-                try {
-                    this.wait();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-            String element = list.remove(0);
-            System.out.println(Thread.currentThread().getName() + " 消费了 " + element);
-            notifyAll();
+        String element = list.remove(0);
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
+        System.out.println(Thread.currentThread().getName() + " 消费了 " + element);
+        notifyAll();
     }
 }
