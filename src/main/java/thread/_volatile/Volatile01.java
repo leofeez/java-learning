@@ -6,7 +6,7 @@ import java.util.concurrent.TimeUnit;
  * @author leofee
  * @date 2020/12/2
  */
-public class VolatileExample implements Runnable {
+public class Volatile01 implements Runnable {
 
     /**
      * 每个线程都对该变量copy一份到线程工作空间中
@@ -15,7 +15,7 @@ public class VolatileExample implements Runnable {
     private /*volatile*/ boolean running = true;
 
     public static void main(String[] args) throws InterruptedException {
-        VolatileExample t = new VolatileExample();
+        Volatile01 t = new Volatile01();
         new Thread(t).start();
 
         TimeUnit.SECONDS.sleep(1);

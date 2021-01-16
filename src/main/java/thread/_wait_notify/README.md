@@ -22,4 +22,18 @@ wait(time)支持指定时间，但是前提是必须是能够拿到锁才会继�
 
 notify方法不能比wait()方法先执行，否则wait的线程不能被正常唤醒，可以设置wait的时间。
 
-在多个线程的情况，如果使用wait()，则需要使用notifyAll(),否则会产生假死，导致所有线程都在waiting状态
+在多个线程的情况，如果使用wait()，则需要使用notifyAll(),否则会产生假死，导致所有线程都在waiting状态。
+
+对于执行的前置条件判断应该使用while去判断，如下：
+ ```java
+    while (waitCondition) {
+        wait();
+    }
+    // 不满足wait条件的处理
+```
+如果不采用while的判断而采用if去判断，会导致线程被唤醒后不经过waitCondition就直接执行了后置的代码，会出现不是预期的结果。
+
+### 通过管道进行线程间通信
+pipedStream 是一种特殊的流，用于在不同线程之间实现线程间传输数据，一个线程发送数据到输出管道，另一个线程从管道中读取数据。
+- PipedInputStream 和 PipedOutputStream
+- PipedReader 和 PipedWriter
