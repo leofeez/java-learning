@@ -12,6 +12,8 @@
 
 
 #### HashMap重要的几个属性：
+在了解HashMap底层实现原理之前，需要对HashMap中几个重要的属性有一定的认知，具体属性如下：
+
 ```java
     // 默认的初始化容量，16，必须为2的幂
     static final int DEFAULT_INITIAL_CAPACITY = 1 << 4; // aka 16
@@ -38,16 +40,32 @@
     // key-value对的数量
     transient int size;
 
-    // 扩容时的阈值
+    // 扩容时的阈值，计算规则为 容量*负载因子
     int threshold;
 
-    // 负载因子
+    // 负载因子，用于计算当HashMap的容量达到多少进行扩容
     final float loadFactor;
 ```
+
 #### HashMap的初始化
-HashMap提供了无参构造和指定初始容量的构造方法。
-HashMap初始化的时候默认的容量是16，扩容的阈值和容量相等。
+HashMap一共提供了三个构造方法，无参构造，指定初始容量和指定初始容量及负载因子的构造方法。
+
+- 无参构造：所有的属性都取默认值，如loadFactory = 0.75F，默认的初始容量为`DEFAULT_INITIAL_CAPACITY`即16。
+- 指定初始容量：负载因为为默认的0.75F，而指定初始容量之后，HashMap并没有直接将指定的初始容量作为真正的HashMap的容量，而是经过
+计算获取一个比给定整数大或者等于的最接近的2的幂次方整数，如给定3，则设置为4，给定9，则设置为16。
+- 指定初始容量及负载因子：其实该构造方法并不常用，因为负载因子的设定关系到扩容的时机，负载因子设置过大会导致HashMap的hash冲突比较严重，影响查询的效率，
+设置过小，会导致频繁地进行扩容，影响添加元素的效率。
 ```java
+    // 无参构造
+    public HashMap() {
+        // 负载因子默认0.75F
+        this.loadFactor = DEFAULT_LOAD_FACTOR; // all other fields defaulted
+    }
+    // 指定初始容量，负载因子默认0.75F
+    public HashMap(int initialCapacity) {
+        this(initialCapacity, DEFAULT_LOAD_FACTOR);
+    }
+    // 指定初始容量以及负载因子
     public HashMap(int initialCapacity, float loadFactor) {
         // 初始容量小于0则抛出异常
         if (initialCapacity < 0)
@@ -67,9 +85,27 @@ HashMap初始化的时候默认的容量是16，扩容的阈值和容量相等�
         this.threshold = tableSizeFor(initialCapacity);
     }
 ```
+
 #### HashMap容量为什么要设置为2的幂次方整数
-关于HashMap的容量为什么要设置为2的幂次方整数，原因是在putVal的时候需要计算table的index，即entry在table的索引，
-计算index的原理就是利用(capacity -1) & hash，当容量capacity设置为2的幂次方时，(capacity-1)之后的二进制码
+HashMap其实就是哈希表，而哈希表数据结构的优点就是存储元素和查询元素的效率特别高，在不考虑hash冲突的情况下时间复杂度可以降为`O(1)`，
+所以为了避免hash冲突，HashMap内部进行了很多处理，如容量设置为2的幂次方整数，具体见：HashMap的`tableSizeFor`。
+
+```java
+    static final int tableSizeFor(int cap) {
+        // cap - 1 是为了防止cap已经是2的幂次方，导致下方位运算之后进行了翻倍
+        int n = cap - 1;
+        n |= n >>> 1;
+        n |= n >>> 2;
+        n |= n >>> 4;
+        n |= n >>> 8;
+        n |= n >>> 16;
+        return (n < 0) ? 1 : (n >= MAXIMUM_CAPACITY) ? MAXIMUM_CAPACITY : n + 1;
+    }
+```
+关于上述源码即可以拿到大于给定的`cap`最接近的2的幂次方整数。
+
+关于HashMap的容量为什么要设置为2的幂次方整数，其实具体原因需要结合HashMap在put元素的操作，HashMap在putVal的时候需要计算table的index，
+即entry桶在table的索引，计算index的原理就是利用(capacity -1) & hash，当容量capacity设置为2的幂次方时，(capacity-1)之后的二进制码
 最高为之后可以保证全是1，如：
  - 容量为8， 对应的7 的二进制码为0000 0111
  - 容量为16，对应的15的二进制码为0000 1111
@@ -81,8 +117,8 @@ HashMap在初始化建议根据实际情况设置初始容量大小，实际上H
 指定初始化容量可以有效减少HashMap的扩容resize次数，因为在进行扩容时会导致重建hash表，重建hash表需要重新计算这些数据在新table数组中的位置并进行复制处理。
 
 #### HashMap的哈希算法
-在HashMap添加元素的时候需要根据key计算对应的hashCode然后再确定该元素对应的数组下标，计算下标的算法为`(capacity -1) & hash`，上面已经解释了
-为什么要用`(capacity -1)`对key的hashCode进行按位与&计算，而对应的hash值在HashMap中也进行了一些处理，不是直接用key.hashCode()作为hash值，
+在HashMap添加元素的时候需要根据key计算对应的hashCode然后再确定该元素对应的数组下标，计算下标的算法为`(capacity -1) & hash`，
+其中`capacity`设置为2的幂次方整数是为了减少hash冲突的第一步，在HashMap的哈希算法中对key的hashCode也进行了一些处理，
 HashMap的hash算法源码如下：
 ```java
     static final int hash(Object key) {
@@ -91,8 +127,8 @@ HashMap的hash算法源码如下：
     }
 ```
 引用自[HashMap的hash算法](https://www.cnblogs.com/LiaHon/p/11149644.html)
-为了减少hash碰撞的几率，在HashMap中就通过上述的hash(Object key)算法将hashcode 与 hashcode的低16位做异或运算，混合了高位和低位得出的
-最终hash值，冲突的概率就小多了。
+为了减少hash碰撞的几率，HashMap并不是直接用key.hashCode()作为hash值，而是通过上述的hash(Object key)算法将
+hashcode 与 hashcode的低16位做异或运算，混合了高位和低位得出的最终hash值，冲突的概率就小多了。
 
 举个例子：
 有个蒸笼，第一层是猪肉包、牛肉包、鸡肉包，第二层是白菜包，第三层是豆沙包，第四层是香菇包。这时你来买早餐，你指着第一层说除了猪肉包，随便给我一个包子，
