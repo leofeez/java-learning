@@ -138,16 +138,20 @@ hashcode 与 hashcode的低16位做异或运算，混合了高位和低位得出
 而HashMap的table下标依赖于最终hash值与capacity-1的&运算，这里的&运算类似于挑包子的过程，自然冲突就小得多了。
 
 计算过程如下：
+```
 
-- 最开始的hashCode              `1111 1111 1111 1111 0100 1100 0000 1010`
--                                       >>> 无符号右移16位
-- 右移16位的hashCode            `0000 0000 0000 0000 1111 1111 1111 1111`
--                                    hashCode ^ (hashCode >>> 16)
-- 异或运算后的hash值             `1111 1111 1111 1111 1011 0011 1111 0101`
--                                      (capacity - 1) & hash
-- capacity-1，如16，的hash值    `0000 0000 0000 0000 0000 0000 0000 1111`
+ 最开始的hashCode               1111 1111 1111 1111 0100 1100 0000 1010
+                                       >>> 无符号右移16位
+ 右移16位的hashCode             0000 0000 0000 0000 1111 1111 1111 1111
+                                    hashCode ^ (hashCode >>> 16)
+ 异或运算后的hashCode           1111 1111 1111 1111 1011 0011 1111 0101
+                                      (capacity - 1) & hash
+ capacity-1，如16，的hash值     0000 0000 0000 0000 0000 0000 0000 1111
+ 
+ 得到最终的数组下标index         0000 0000 0000 0000 0000 0000 0000 0101
+ 
+```
 
-- 得到最终的数组下标index         `0000 0000 0000 0000 0000 0000 0000 0101`
 
 这样的过程叫做扰动函数。
 
@@ -230,6 +234,104 @@ HashMap对table的初始化是在第一次put元素的时候，HashMap进行put�
     }
 ```
 
+#### HashMap的扩容机制
+HashMap扩容的时机取决于扩容阈值`threshold`，阈值的计算规则为`threshold = capicaty * loadFactor`，
+当HashMap的size大于或等于 `threshold`则HashMap会进行扩容处理。
+```java
+final Node<K,V>[] resize() {
+        
+        // ------------------- 计算需要扩容的容量和阈值 ---------------------
+        Node<K,V>[] oldTab = table;
+        int oldCap = (oldTab == null) ? 0 : oldTab.length;
+        int oldThr = threshold;
+        int newCap, newThr = 0;
+        // 原容量大于0，说明不是第一次扩容
+        if (oldCap > 0) {
+            // 原容量已经大于最大容量则将扩容阈值设置为Integer最大值
+            // 后续不再进行扩容直接返回原table
+            if (oldCap >= MAXIMUM_CAPACITY) {
+                threshold = Integer.MAX_VALUE;
+                return oldTab;
+            }
+            // 若原容量的2倍大于等于16，则扩容阈值也为原阈值的2倍
+            else if ((newCap = oldCap << 1) < MAXIMUM_CAPACITY &&
+                     oldCap >= DEFAULT_INITIAL_CAPACITY)
+                newThr = oldThr << 1; // double threshold
+        }
+        // HashMap初始化时设置了初始容量，则将容量 = 初始化计算的阈值（其实就是容量）
+        else if (oldThr > 0) // initial capacity was placed in threshold
+            // 将第一次计算的阈值赋值给容量
+            newCap = oldThr;
+        // HashMap无参构造初始化，则默认容量为16及负载因子默认为0.75F，阈值为16*0.75F = 12
+        else {               // zero initial threshold signifies using defaults
+            newCap = DEFAULT_INITIAL_CAPACITY;
+            newThr = (int)(DEFAULT_LOAD_FACTOR * DEFAULT_INITIAL_CAPACITY);
+        }
+        // 在上面的 else if (oldThr > 0) 中未对 newThr 进行赋值
+        // 所以这里是指第一次执行了初始容量时计算了 threshold = tableSizeFor(cap)
+        // 计算第一次真正的阈值
+        if (newThr == 0) {
+            float ft = (float)newCap * loadFactor;
+            newThr = (newCap < MAXIMUM_CAPACITY && ft < (float)MAXIMUM_CAPACITY ?
+                      (int)ft : Integer.MAX_VALUE);
+        }
+        threshold = newThr;
+        
+        // ------------------- 扩容时对原数据拷贝到新的entry桶中---------------------
+
+        @SuppressWarnings({"rawtypes","unchecked"})
+        Node<K,V>[] newTab = (Node<K,V>[])new Node[newCap];
+        table = newTab;
+        if (oldTab != null) {
+            // 遍历原entry数组
+            for (int j = 0; j < oldCap; ++j) {
+                Node<K,V> e;
+                if ((e = oldTab[j]) != null) {
+                    oldTab[j] = null;
+                    // e.next为空表明该entry位只有一个元素，直接添加到新的entry数组中
+                    if (e.next == null)
+                        newTab[e.hash & (newCap - 1)] = e;
+                    // 当前entry位为红黑树节点
+                    else if (e instanceof TreeNode)
+                        ((TreeNode<K,V>)e).split(this, newTab, j, oldCap);
+                    // 当前entry位为链表元素
+                    else { // preserve order
+                        Node<K,V> loHead = null, loTail = null;
+                        Node<K,V> hiHead = null, hiTail = null;
+                        Node<K,V> next;
+                        do {
+                            next = e.next;
+                            if ((e.hash & oldCap) == 0) {
+                                if (loTail == null)
+                                    loHead = e;
+                                else
+                                    loTail.next = e;
+                                loTail = e;
+                            }
+                            else {
+                                if (hiTail == null)
+                                    hiHead = e;
+                                else
+                                    hiTail.next = e;
+                                hiTail = e;
+                            }
+                        } while ((e = next) != null);
+                        if (loTail != null) {
+                            loTail.next = null;
+                            newTab[j] = loHead;
+                        }
+                        if (hiTail != null) {
+                            hiTail.next = null;
+                            newTab[j + oldCap] = hiHead;
+                        }
+                    }
+                }
+            }
+        }
+        return newTab;
+    }
+
+```
 
 #### 1.8 对HashMap的改进
 - 1.7 中 HashMap的底层实现是数组 + 单链表，1.8底层实现增加了红黑树，当链表的长度大于等于8（默认）时将链表转换为红黑树。
