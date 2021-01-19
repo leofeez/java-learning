@@ -1,59 +1,76 @@
 package thread.basic;
 
-import java.util.concurrent.TimeUnit;
-
 /**
+ * join()方法内部使用了wait()，而wait()方法是会释放锁，这里有点绕的是
+ * join()方法释放的是谁的锁，从下面的测试代码可以看出，thread.join()
+ * 释放的是thread对象锁，因为方法内部使用了this.wait(),所以哪个对象调用
+ * 了join()方法，则对应的对象锁就被当前线程释放掉了
+ *
  * @author leofee
  * @date 2021/1/16
  */
-public class Join02 extends Thread {
-    public Join02() {
+public class Join02 {
+
+    public static void main(String[] args) throws InterruptedException {
+        Thread_A threadA = new Thread_A();
+        threadA.setName("A");
+
+        Thread_B threadB = new Thread_B(threadA, "B");
+        threadB.start();
     }
 
-    public Join02(Runnable target, String name) {
-        super(target, name);
-    }
+    static class Thread_A extends Thread {
 
-    public static void main(String[] args) {
-        Join02 obj = new Join02();
-
-        Join02 A = new Join02(obj::joinOtherThread, "A");
-        A.start();
-
-        Join02 B = new Join02(obj::print, "B");
-        B.start();
-    }
-
-    public synchronized void print() {
-        System.out.println(Thread.currentThread().getName() + " 正在执行......");
-        try {
-            TimeUnit.SECONDS.sleep(5);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        System.out.println(Thread.currentThread().getName() + " 执行结束......");
-    }
-
-    public synchronized void joinOtherThread() {
-        System.out.println(Thread.currentThread().getName() + " 正在执行......");
-        Join02 C = new Join02(() -> {
-            System.out.println(Thread.currentThread().getName() + " 正在执行......");
-            for (int i = 0; i < 5; i++) {
-                try {
-                    TimeUnit.SECONDS.sleep(1);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+        @Override
+        public void run() {
+            System.out.println(Thread.currentThread().getName() + "开始执行......");
+            // 锁对象是 Thread_A 本身
+            synchronized (this) {
+                for (int i = 0; i < 5; i++) {
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    System.out.println(Thread.currentThread().getName() + " " + i);
                 }
-                System.out.println(i);
             }
-            System.out.println(Thread.currentThread().getName() + " 执行结束......");
-        }, "C");
-        C.start();
-        try {
-            C.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+            System.out.println(Thread.currentThread().getName() + "执行结束......");
         }
-        System.out.println(Thread.currentThread().getName() + " 执行结束......");
+    }
+
+    static class Thread_B extends Thread {
+
+        final Thread_A threadA;
+
+        public Thread_B(Thread_A threadA, String name) {
+            this.threadA = threadA;
+            super.setName(name);
+        }
+
+        @Override
+        public void run() {
+            System.out.println(Thread.currentThread().getName() + "开始执行......");
+            synchronized (threadA) {
+                threadA.start();
+                for (int i = 0; i < 10; i++) {
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    System.out.println(Thread.currentThread().getName() + " " + i);
+                    if (i == 5) {
+                        try {
+                            System.out.println("-----A.join------A的状态为：" + threadA.getState());
+                            threadA.join();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            }
+            System.out.println(Thread.currentThread().getName() + "执行结束......");
+        }
     }
 }
