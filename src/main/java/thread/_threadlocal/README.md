@@ -138,7 +138,8 @@ public class ThreadLocal<T> {
 最后就会自动被回收。
 
 ### 内存泄漏
-如果Entry的key不是弱引用，即使外部的tl设置为null，这时候ThreadLocal对象依旧被key强引用指向，则不会被回收，就会发生内存泄漏。
+如果Entry的key不是弱引用，即使外部的tl设置为null，这时候ThreadLocal对象依旧被key强引用指向(原因为：当引用传递设置为null时无法影响传递内的结果)，
+则不会被回收，就会发生内存泄漏。
 还有，由于ThreadLocalMap是线程对象的一个变量，如果在有线程池的情况下，由于线程并不是执行完就立马释放，所以线程中的ThreadLocalMap是一直
 存在的，所以当key被回收时，即key为null了，value这时候就永远都访问不到了，也就一直无法被回收，所以在使用ThreadLocal后如果对应的value已经
 不需要了，需要手工`remove()`;
