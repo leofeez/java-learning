@@ -18,7 +18,7 @@
 - join : 当我们调用某个线程的这个方法时，这个方法会挂起调用线程，直到被调用线程结束执行，调用线程才会继续执行。在很多情况下，主线程创建
 了子线程，如果子线程需要进行大量耗时的计算，而主线程需要等待子线程的执行完成之后才能执行，这时候就可利用join()。
 
-join()方法内部使用了wait()，也就是说join()方法会释放锁。
+join()方法内部使用了wait()，也就是说join()方法会释放锁。但是这里需要注意的是，释放的锁对象必须是线程实例，其他的对象实例是不会释放锁的。
 
 线程的六种状态：
 - new：当创建线程时，线程就处于new新建状态
@@ -100,14 +100,18 @@ synchronized与volatile的区别如下：
 - volatile 只是实现可见性，synchronized解决的是线程之间对同一个资源的操作的同步性。
     
 ## CAS 
-Compare And Swap 又称乐观锁
+Compare And Swap 又称乐观锁，底层依靠CPU的原语实现，在更新值之前会判断是否是期望值，如果不是，则循环等待
 cas(expected, update);
-- AtomicInteger
-- LongAdder
+- AtomicInteger：底层利用Unsafe类，能直接操作CPU
+- LongAdder：内部使用分段锁，在线程数特别多的时候效率会高一些
 
 ## LOCK 
 
 ### ReentrantLock
+可重入锁，为了替代synchronized，必须显示的去上锁和解锁，上锁和解锁的代码必须放在try {..} finally{..}中
+支持被打断，lock.interupt
+ReentrantLock默认为非公平的锁，构造方法支持公平锁，新来的线程必选先检查是否有线程在等待锁的队列中，如果有则需要进入等待队列，
+非公平的锁对于新来的线程是有可能会抢到锁
 
 ### CyclicBarrier
 
