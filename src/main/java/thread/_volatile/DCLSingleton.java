@@ -23,8 +23,10 @@ public class DCLSingleton {
 
                     // JVM 虚拟机编译之后为多个指令
                     // 1. 申请内存
-                    // 2. 成员变量初始化(本例中的volatile的作用就是防止指令重排序导致在高并发的情况下读到成员变量在赋值过程中的中间值)
+                    // 2. 成员变量初始化
                     // 3. 内存赋值给INSTANCE
+                    // (本例中的volatile的作用就是防止指令重排序导致在高并发的情况下读到成员变量在赋值过程中的中间值)
+                    // 比如 t1线程执行顺序为1-3-2，这时候t2线程进来发现INSTANCE不为null直接就返回，但是这时候INSTANCE可能还没有进行初始化
                     INSTANCE = new DCLSingleton();
                 }
             }

@@ -108,8 +108,9 @@ cas(expected, update);
 ## LOCK 
 
 ### ReentrantLock
-可重入锁，为了替代synchronized，必须显示的去上锁和解锁，上锁和解锁的代码必须放在try {..} finally{..}中
-支持被打断，lock.interupt
+可重入锁，必须显示的去上锁和解锁，上锁和解锁的代码必须放在try {..} finally{..}中
+支持tryLock()和等待时间
+支持被打断，lock.lockInterruptibly();
 ReentrantLock默认为非公平的锁，构造方法支持公平锁，新来的线程必选先检查是否有线程在等待锁的队列中，如果有则需要进入等待队列，
 非公平的锁对于新来的线程是有可能会抢到锁
 

@@ -18,8 +18,8 @@ public class Lock03 {
         LockThread thread = new LockThread("第二个线程");
         thread.start();
 
-//        TimeUnit.SECONDS.sleep(3);
-//        thread.interrupt();
+        TimeUnit.SECONDS.sleep(3);
+        thread.interrupt();
     }
 
     static class LockThread extends Thread {
@@ -47,6 +47,9 @@ public class Lock03 {
             }
 
             System.out.println(Thread.currentThread().getName() + "获取到了锁.....");
+
+            boolean tryLock2 = LOCK.tryLock();
+            System.out.println("ReentrantLock 是否是可重入锁" + tryLock2);
 
             try {
                 for (int i = 0; i < 5; i++) {
