@@ -65,8 +65,17 @@ interrupt()，该方法仅仅是在当前线程打了一个停止的标记，并
 
 具体见[synchronized原理分析](https://github.com/leofeez/java-learning/blob/master/src/main/java/thread/_synchronized/README.md)
 
-## 锁的分类
+对象的结构一共由4部分组成，markword, 类型指针，实例数据，padding(对齐填充)可以利用JOL类库显示
 
+## 锁的分类
+乐观锁/悲观锁
+独享锁/共享锁
+互斥锁/读写锁
+可重入锁
+公平锁/非公平锁
+分段锁
+偏向锁/轻量级锁/重量级锁
+自旋锁
 锁升级
 synchronized 默认情况下，使用偏向锁，如果有其他线程争用，升级为自旋锁，类似于while(i< 10) i++, 自旋10次
 如果此时还是无法获取到锁，则升级为重量级锁 OS锁
@@ -89,6 +98,7 @@ OS锁（系统锁），适合执行时间长，线程数多
 - 禁止指令重排序
     + DCL单例
     
+
 volatile最大的缺点就是无法保证原子性。
 
 synchronized与volatile的区别如下：
@@ -98,21 +108,55 @@ synchronized与volatile的区别如下：
 - volatile能保证数据的可见性，但是不能保证原子性，而synchronized可以保证原子性，也可以间接的保证可见性，因为
 它会将私有内存和公共内存中的数据进行同步。
 - volatile 只是实现可见性，synchronized解决的是线程之间对同一个资源的操作的同步性。
-    
+  
 ## CAS 
 Compare And Swap 又称乐观锁，底层依靠CPU的原语实现，在更新值之前会判断是否是期望值，如果不是，则循环等待
 cas(expected, update);
+
+实现原理
+
+- 每个线程都会先获取当前的值，接着走一个原子的CAS操作，原子的意思就是这个CAS操作一定是自己完整执行完的，不会被别人打断；
+
+- 在CAS操作里，比较一下，现在的值跟刚才我获取到的那个值，是否相等，是则说明没有人改过这个值，那么将它设置成累加1之后的一个值
+- 若有人在执行CAS时，发现自己之前获取的值与当前的值不一样，说明有其他人修改了值，导致CAS失败，失败之后进入一个循环，再次获取值，再执行CAS操作。
+
+CAS使用：
+
 - AtomicInteger：底层利用Unsafe类，能直接操作CPU
-- LongAdder：内部使用分段锁，在线程数特别多的时候效率会高一些
+- LongAdder：Java8的新类LongAdder，尝试使用分段CAS以及自动分段迁移的方式来提升多线程高并发执行CAS操作的性能，核心思想是热点分离。
+
+CAS 的问题：
+
+- ABA问题：有一个线程将值更新成B，然后做了一些其他的操作，最后又将值更改为A，这中间的操作可能会产生隐藏问题。
+
+  解决方式为加版本号Version，保持递增
+  AtomicMarkableReference
+  AtomicStampedReference
+
+- 比较和操作要保证原子性
+
+  ```java
+  // 判断和设置新值的操作需要保证原子性
+  if (expectedValue == value) {
+      value = newValue;
+  }
+  ```
+
+相对于synchronized重量级锁需要等待操作系统调度
+
+由于CAS失败会循环等待，消耗CPU，CAS 在线程数多，操作的时间长的时候会导致CPU飙升，这时候效率不如synchronized
 
 ## LOCK 
 
+![](lock.jpg)
+
 ### ReentrantLock
-可重入锁，必须显示的去上锁和解锁，上锁和解锁的代码必须放在try {..} finally{..}中
-支持tryLock()和等待时间
-支持被打断，lock.lockInterruptibly();
-ReentrantLock默认为非公平的锁，构造方法支持公平锁，新来的线程必选先检查是否有线程在等待锁的队列中，如果有则需要进入等待队列，
-非公平的锁对于新来的线程是有可能会抢到锁
+
+- 可重入锁，必须显示的去上锁和解锁，上锁和解锁的代码必须放在```try {..} finally{..}```中
+- 支持设置等待超时时间```lock.tryLock(5, TimeUnit.SECONDS);```
+- 支持被打断，```lock.lockInterruptibly();```
+- ReentrantLock默认为非公平的锁，构造方法支持公平锁，新来的线程必选先检查是否有线程在等待锁的队列中，如果有则需要进入等待队列，
+  非公平的锁对于新来的线程是有可能会抢到锁.
 
 ### CyclicBarrier
 

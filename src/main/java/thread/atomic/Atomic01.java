@@ -8,17 +8,22 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author leofee
  * @date 2020/12/3
  */
-public class AtomicExample {
+public class Atomic01 {
 
     private AtomicInteger count = new AtomicInteger(0);
 
-    public static void main(String[] args) {
-        AtomicExample example = new AtomicExample();
+    private int countNumber = 0;
 
-        // 创建10个线程
+    public static void main(String[] args) {
+        Atomic01 example = new Atomic01();
+
+        // 创建100个线程
         List<Thread> threadList = new ArrayList<>();
-        for (int i = 0; i < 10; i++) {
-            threadList.add(new Thread(example::add));
+        for (int i = 0; i < 100; i++) {
+            threadList.add(new Thread(() -> {
+                example.addByAtomicInteger();
+                example.add();
+            }));
         }
 
         // 执行线程
@@ -36,11 +41,26 @@ public class AtomicExample {
 
         // 输出所有线程执行完之后的count值
         System.out.println(example.count);
+
+        System.out.println(example.countNumber);
     }
 
-    public void add() {
+    /**
+     * AtomicInteger 底层利用了CAS，利用Unsafe类型操作内存，
+     * 最底层利用汇编语言的lock compxchg能够锁CPU总线
+     */
+    public void addByAtomicInteger() {
         for (int i = 0; i < 1000; i++) {
             count.incrementAndGet();
+        }
+    }
+
+    /**
+     * 如果不加锁则会出现线程安全问题
+     */
+    public /*synchronized*/ void add() {
+        for (int i = 0; i < 1000; i++) {
+            countNumber++;
         }
     }
 }
