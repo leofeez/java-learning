@@ -5,18 +5,18 @@ import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class Lock05 extends Thread {
+public class ReentrantLock05 extends Thread {
     /** ReentrantLock可以指定为公平锁*/
     static Lock LOCK = new ReentrantLock();
 
-    public Lock05(String name, Runnable target) {
+    public ReentrantLock05(String name, Runnable target) {
         super(target, name);
     }
 
     public static void main(String[] args) throws InterruptedException {
         List<Thread> threadList = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
-            threadList.add(new Lock05("第" + i + "个线程", Lock05::lock));
+            threadList.add(new ReentrantLock05("第" + i + "个线程", ReentrantLock05::lock));
         }
 
         for (Thread thread : threadList) {
@@ -25,7 +25,7 @@ public class Lock05 extends Thread {
 
         Thread.sleep(500);
 
-        new Lock05("第11个线程", Lock05::lock).start();
+        new ReentrantLock05("第11个线程", ReentrantLock05::lock).start();
 
     }
 

@@ -15,10 +15,9 @@
 ## sleep yield join
 - sleep: 线程休眠，`Thread.sleep(1000)/ TimeUnit.SECONDS.sleep(1)`
 - yield: 使当前线程由执行状态，变成为就绪状态(Runnable)，让出cpu时间，在下一个线程执行时候，此线程有可能被执行，也有可能没有被执行。
-- join : 当我们调用某个线程的这个方法时，这个方法会挂起调用线程，直到被调用线程结束执行，调用线程才会继续执行。在很多情况下，主线程创建
-了子线程，如果子线程需要进行大量耗时的计算，而主线程需要等待子线程的执行完成之后才能执行，这时候就可利用join()。
+- join : 当我们调用某个线程的这个方法时，这个方法会挂起调用线程，直到被调用线程结束执行，调用线程才会继续执行。在很多情况下，主线程创建了子线程，如果子线程需要进行大量耗时的计算，而主线程需要等待子线程的执行完成之后才能执行，这时候就可利用join()。
 
-join()方法内部使用了wait()，也就是说join()方法会释放锁。但是这里需要注意的是，释放的锁对象必须是线程实例，其他的对象实例是不会释放锁的。
+join()方法内部使用了wait()，也就是说join()方法会释放锁。但是这里需要注意的是，**释放的锁对象必须是线程实例**，其他的对象实例是不会释放锁的。
 
 线程的六种状态：
 - new：当创建线程时，线程就处于new新建状态
@@ -68,15 +67,16 @@ interrupt()，该方法仅仅是在当前线程打了一个停止的标记，并
 对象的结构一共由4部分组成，markword, 类型指针，实例数据，padding(对齐填充)可以利用JOL类库显示
 
 ## 锁的分类
-乐观锁/悲观锁
-独享锁/共享锁
-互斥锁/读写锁
-可重入锁
-公平锁/非公平锁
-分段锁
-偏向锁/轻量级锁/重量级锁
-自旋锁
-锁升级
+1. 乐观锁/悲观锁
+2. 独享锁/共享锁
+3. 互斥锁/读写锁
+4. 可重入锁
+5. 公平锁/非公平锁
+6. 分段锁
+7. 偏向锁/轻量级锁/重量级锁
+8. 自旋锁
+
+#### 锁升级
 synchronized 默认情况下，使用偏向锁，如果有其他线程争用，升级为自旋锁，类似于while(i< 10) i++, 自旋10次
 如果此时还是无法获取到锁，则升级为重量级锁 OS锁
 改进后的synchronized并不比Atomic差
@@ -99,7 +99,7 @@ OS锁（系统锁），适合执行时间长，线程数多
     + DCL单例
     
 
-volatile最大的缺点就是无法保证原子性。
+**volatile最大的缺点就是无法保证原子性。**
 
 synchronized与volatile的区别如下：
 - volatile是线程同步的轻量级实现，所以volatile的性能肯定是比synchronized好，volatile只能修饰变量，
@@ -110,8 +110,8 @@ synchronized与volatile的区别如下：
 - volatile 只是实现可见性，synchronized解决的是线程之间对同一个资源的操作的同步性。
   
 ## CAS 
-Compare And Swap 又称乐观锁，底层依靠CPU的原语实现，在更新值之前会判断是否是期望值，如果不是，则循环等待
-cas(expected, update);
+Compare And Swap 又称乐观锁，底层依靠CPU的原语实现，在更新值之前会判断是否是期望值，如果不是，则进行自旋
+compareAndSet(expected, newValue);
 
 实现原理
 
@@ -123,16 +123,30 @@ cas(expected, update);
 CAS使用：
 
 - AtomicInteger：底层利用Unsafe类，能直接操作CPU
+
+  ```java
+  // Unsafe类的getAndAddInt 就是利用了CAS
+  public final int getAndAddInt(Object var1, long var2, int var4) {
+    	int var5;
+    	do {
+      	var5 = this.getIntVolatile(var1, var2);
+        // 如果CAS失败会进行自旋重试
+    	} while(!this.compareAndSwapInt(var1, var2, var5, var5 + var4));
+    	
+    	return var5;
+  }
+  ```
+
+  
+
 - LongAdder：Java8的新类LongAdder，尝试使用分段CAS以及自动分段迁移的方式来提升多线程高并发执行CAS操作的性能，核心思想是热点分离。
 
 CAS 的问题：
 
-- ABA问题：有一个线程将值更新成B，然后做了一些其他的操作，最后又将值更改为A，这中间的操作可能会产生隐藏问题。
-
-  解决方式为加版本号Version，保持递增
-  AtomicMarkableReference
+- ABA问题：有一个线程将值更新成B，然后做了一些其他的操作，最后又将值更改为A，那么使用CAS进行检查时会发现它的值没有发生变化，但是实际上却变化了。解决方式为加版本号Version，保持递增，或者加时间戳。
+AtomicMarkableReference
   AtomicStampedReference
-
+  
 - 比较和操作要保证原子性
 
   ```java
@@ -142,9 +156,9 @@ CAS 的问题：
   }
   ```
 
-相对于synchronized重量级锁需要等待操作系统调度
+优点：CAS是无锁的操作，在多线程的环境下不需要进行申请锁和释放锁的操作，也不用挂起当前的线程，也避免了和操作系统的调度。
 
-由于CAS失败会循环等待，消耗CPU，CAS 在线程数多，操作的时间长的时候会导致CPU飙升，这时候效率不如synchronized
+缺点：由于CAS失败会自旋，消耗CPU，如果线程较多、资源抢占激烈、命中率低的情况下，不断的循环会不断的消耗资源，浪费CPU资源。
 
 ## LOCK 
 
@@ -160,7 +174,7 @@ CAS 的问题：
 
 ### CountDownLatch
 
-countDownLatch这个类使一个线程等待其他线程各自执行完毕后再执行，和```Thread.join()```类似。
+CountDownLatch这个类使一个线程等待其他线程各自执行完毕后再执行，和```Thread.join()```类似。
 是通过一个计数器来实现的，计数器的初始值是线程的数量。每当一个线程执行完毕后，计数器的值就-1，当计数器的值为0时，表示所有线程都执行完毕，然后在闭锁上等待的线程就可以恢复工作了
 
 ### CyclicBarrier

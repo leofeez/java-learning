@@ -8,7 +8,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * @author leofee
  * @date 2020/12/5
  */
-public class Lock03 {
+public class ReentrantLock03 {
 
     private final static Lock LOCK = new ReentrantLock();
 
