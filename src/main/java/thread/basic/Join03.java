@@ -34,25 +34,27 @@ public class Join03 {
         }
     }
 
-}
+    static class MyThread extends Thread {
 
-class MyThread extends Thread {
+        private String name;
+        private Object oo;
 
-    private String name;
-    private Object oo;
+        public MyThread(String name, Object oo) {
+            this.name = name;
+            this.oo = oo;
+        }
 
-    public MyThread(String name, Object oo) {
-        this.name = name;
-        this.oo = oo;
-    }
-
-    @Override
-    public void run() {
-        synchronized (this) {
-            for (int i = 0; i < 100; i++) {
-                System.out.println(name + i);
+        @Override
+        public void run() {
+            synchronized (this) {
+                for (int i = 0; i < 100; i++) {
+                    System.out.println(name + i);
+                }
             }
         }
+
     }
 
 }
+
+

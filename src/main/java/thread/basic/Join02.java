@@ -63,6 +63,7 @@ public class Join02 {
                     if (i == 5) {
                         try {
                             System.out.println("-----A.join------A的状态为：" + threadA.getState());
+                            // 这个时候B线程会释放锁
                             threadA.join();
                         } catch (InterruptedException e) {
                             e.printStackTrace();
