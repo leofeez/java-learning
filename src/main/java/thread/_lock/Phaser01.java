@@ -7,7 +7,7 @@ public class Phaser01 extends Thread {
     static PartyPhaser partyPhaser = new PartyPhaser();
 
     static {
-        partyPhaser.bulkRegister(5);
+
     }
 
     public Phaser01(Runnable target, String name) {
@@ -15,23 +15,12 @@ public class Phaser01 extends Thread {
     }
 
     public static void main(String[] args) {
+        partyPhaser.bulkRegister(5);
         String[] names = {"A", "B", "C", "D", "E"};
 
 
         for (int i = 0; i < 5; i++) {
-            new Phaser01(() -> {
-
-                // 等待所有人到齐
-                arrived();
-
-                // 开始仪式
-                startParty();
-
-                // 结束
-                endParty();
-
-                clean();
-            }, names[i]).start();
+            new Phaser01(new Person(names[i]), names[i]).start();
         }
 
     }
@@ -53,42 +42,59 @@ public class Phaser01 extends Thread {
                     return false;
                 case 3:
                     System.out.println(Thread.currentThread().getName() + "打扫卫生！" + registeredParties);
-                    return false;
+                    return true;
                 default:
                     return true;
             }
         }
     }
 
-    public static void arrived() {
-        System.out.println(Thread.currentThread().getName() + "到了!");
-        partyPhaser.arriveAndAwaitAdvance();
-    }
+    static class Person implements Runnable {
+        String name;
 
-    public static void startParty() {
-        System.out.println(Thread.currentThread().getName() + "发表致辞!");
-        partyPhaser.arriveAndAwaitAdvance();
-    }
+        public Person(String name) {
+            this.name = name;
+        }
 
-    public static void endParty() {
-        System.out.println(Thread.currentThread().getName() + "回家了!");
-        partyPhaser.arriveAndAwaitAdvance();
-    }
-
-    public static void clean() {
-        String name = Thread.currentThread().getName();
-        if ("A".equals(name)) {
-            // 这里只有让其他线程先进行Deregister，最后才是A线程进入最后一个阶段
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            System.out.println(name + "arriveAndAwaitAdvance");
+        public void arrived() {
+            System.out.println(Thread.currentThread().getName() + "到了!");
             partyPhaser.arriveAndAwaitAdvance();
-        } else {
-            System.out.println(name + "arriveAndDeregister");
-            partyPhaser.arriveAndDeregister();
+        }
+
+        public void startParty() {
+            System.out.println(Thread.currentThread().getName() + "发表致辞!");
+            partyPhaser.arriveAndAwaitAdvance();
+        }
+
+        public void endParty() {
+            System.out.println(Thread.currentThread().getName() + "回家了!");
+            partyPhaser.arriveAndAwaitAdvance();
+        }
+
+        public void clean() {
+            String threadName = Thread.currentThread().getName();
+            if(threadName.equals("A")) {
+//                milliSleep(r.nextInt(1000));
+                System.out.printf("%s 拿起扫把！\n", this.name);
+                partyPhaser.arriveAndAwaitAdvance();
+            } else {
+                System.out.println(partyPhaser.arriveAndDeregister());
+                //phaser.register()
+            }
+        }
+
+        @Override
+        public void run() {
+            arrived();
+
+            startParty();
+
+            endParty();
+
+            clean();
+
         }
     }
+
+
 }
