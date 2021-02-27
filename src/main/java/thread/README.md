@@ -70,7 +70,7 @@ interrupt()，该方法仅仅是在当前线程打了一个停止的标记，并
 1. 乐观锁/悲观锁
 2. 独享锁/共享锁
 3. 互斥锁/读写锁
-4. 可重入锁
+4. 可重入锁：可重入锁，就是说一个线程在获取某个锁后，还可以继续获取该锁，即允许一个线程多次获取同一个锁。
 5. 公平锁/非公平锁
 6. 分段锁
 7. 偏向锁/轻量级锁/重量级锁
@@ -179,15 +179,60 @@ CountDownLatch这个类使一个线程等待其他线程各自执行完毕后再
 
 ### CyclicBarrier
 
+允许一组线程互相等待，直到到达某个公共屏障点。它提供的await()可以实现让所有参与者在临界点到来之前一直处于等待状态。当到达的参与者数量达到设置的临界点（parties），则执行CyclicBarrier的Runnable函数。
+
+```java
+public CyclicBarrier(int parties, Runnable barrierAction){...}
+```
+
+
+
 ### Phaser
 
-### ReadWriteLock
-- 共享锁
+它把多个线程协作执行的任务划分为多个阶段，编程时需要明确各个阶段的任务，每个阶段都可以有任意个参与者，线程都可以随时注册并参与到某个阶段。
 
-- 排他锁
+- parties: 表示参与者的数量。
+- arriveAndAwaitAdvance：表示当前参与者到达并等待其他参与者。
+- arriveAndDeregister:表示当前参与者到达，但是不进入下一个阶段。
+
+### ReadWriteLock
+- 共享锁：读锁使用共享模式。
+
+- 排他锁：写锁使用独占模式。
+
+  ```java
+  static ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
+  // 读锁
+  static Lock readLock = readWriteLock.readLock();
+  // 写锁
+  static Lock writeLock = readWriteLock.writeLock();
+  ```
 
 ### Semaphore
-限流，类似于车道和收费站
+Semaphore字面意思是信号量。他主要用于控制有限的资源的访问数量，类似于去餐厅就餐，位置不够了需要等待，当有人离开则新的顾客可以进入就餐。
+
+- 构造参数 permits：最大许可的数量。
+
+- acquire(int permits)：当前申请的许可证，可以指定数量。
+
+- release()：释放当前所占用的许可证。
+
+  ```java
+  Semaphore semaphore = new Semaphore();
+  // 申请许可证
+  semaphore.acquire(1);
+  // do something
+  semaphore.release(1);
+  ```
+
+  
+
+### Exchanger
+
+Exchanger 是 JDK 1.5 开始提供的一个用于两个工作线程之间交换数据的封装工具类，简单说就是一个线程在完成一定的事务后想与另一个线程交换数据，则第一个先拿出数据的线程会一直等待第二个线程，直到第二个线程拿着数据到来时才能彼此交换对应数据。
+
+- exchange(V value): 等待另一个线程到达此交换点（除非当前线程被中断），然后将给定的对象传送给该线程，并接收该线程的对象。
+- exchange(V value, long timeout, TimeUnit unit)：等待另一个线程到达此交换点（除非当前线程被中断或超出了指定的等待时间），然后将给定的对象传送给该线程，并接收该线程的对象。
 
 
 ## AQS
