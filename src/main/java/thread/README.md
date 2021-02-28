@@ -110,10 +110,20 @@ synchronized与volatile的区别如下：
 - volatile 只是实现可见性，synchronized解决的是线程之间对同一个资源的操作的同步性。
   
 ## CAS 
-Compare And Swap 又称乐观锁，底层依靠CPU的原语实现，在更新值之前会判断是否是期望值，如果不是，则进行自旋
-compareAndSet(expected, newValue);
+Compare And Swap 又称乐观锁，CAS是无锁的操作，在多线程的环境下不需要进行申请锁和释放锁的操作，也不用挂起当前的线程等待操作系统的调度。
+
+在CAS操作中包含三个操作数，内存值V，期望值A，新值B，compareAndSet(obj, expected, newValue);
+
+```java
+do {
+    expected = oldValue;
+    // do something
+} while(CAS(内存地址, expected, update))
+```
 
 实现原理
+
+底层依靠CPU的原语实现，在intel的CPU中，使用cmpxchg指令，在更新值之前会判断是否是期望值，如果不是，则进行自旋。
 
 - 每个线程都会先获取当前的值，接着走一个原子的CAS操作，原子的意思就是这个CAS操作一定是自己完整执行完的，不会被别人打断；
 
@@ -146,19 +156,8 @@ CAS 的问题：
 - ABA问题：有一个线程将值更新成B，然后做了一些其他的操作，最后又将值更改为A，那么使用CAS进行检查时会发现它的值没有发生变化，但是实际上却变化了。解决方式为加版本号Version，保持递增，或者加时间戳。
 AtomicMarkableReference
   AtomicStampedReference
-  
-- 比较和操作要保证原子性
-
-  ```java
-  // 判断和设置新值的操作需要保证原子性
-  if (expectedValue == value) {
-      value = newValue;
-  }
-  ```
-
-优点：CAS是无锁的操作，在多线程的环境下不需要进行申请锁和释放锁的操作，也不用挂起当前的线程，也避免了和操作系统的调度。
-
-缺点：由于CAS失败会自旋，消耗CPU，如果线程较多、资源抢占激烈、命中率低的情况下，不断的循环会不断的消耗资源，浪费CPU资源。
+- CAS开销问题：由于CAS失败会自旋，消耗CPU，如果线程较多、资源抢占激烈、命中率低的情况下，不断的循环会不断的消耗资源，浪费CPU资源。
+- 只能保证一个共享变量的原子操作。
 
 ## LOCK 
 
