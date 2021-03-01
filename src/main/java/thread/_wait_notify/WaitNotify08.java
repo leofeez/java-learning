@@ -41,27 +41,26 @@ public class WaitNotify08 extends Thread {
     }
 
     public synchronized void produce() {
-        if (list.size() > 0) {
+        while (list.size() > 0) {
             try {
                 wait();
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-        } else {
-            list.add(UUID.randomUUID().toString());
-            System.out.println(Thread.currentThread().getName() + ", 生产了 " + list.get(0));
-            try {
-                TimeUnit.SECONDS.sleep(1);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            notifyAll();
         }
+        list.add(UUID.randomUUID().toString());
+        System.out.println(Thread.currentThread().getName() + ", 生产了 " + list.get(0));
+        try {
+            TimeUnit.SECONDS.sleep(1);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        notifyAll();
 
     }
 
     public synchronized void consume() {
-        if (list.size() > 0) {
+        while (list.size() > 0) {
             String remove = list.remove(0);
             System.out.println(Thread.currentThread().getName() + ", 消费了 " + remove);
             try {
@@ -70,12 +69,11 @@ public class WaitNotify08 extends Thread {
                 e.printStackTrace();
             }
             notifyAll();
-        } else {
-            try {
-                wait();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+        }
+        try {
+            wait();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
 }

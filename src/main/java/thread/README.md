@@ -66,6 +66,39 @@ interrupt()，该方法仅仅是在当前线程打了一个停止的标记，并
 
 对象的结构一共由4部分组成，markword, 类型指针，实例数据，padding(对齐填充)可以利用JOL类库显示
 
+## volatile
+
+作用如下：
+
+- 保证线程可见性：由于每个线程都有自己的工作空间，对于线程共享的变量每个线程会从主存中拷贝一份到当前线程的工作空间内，
+  大致可分为几个步骤：
+
+    * read和load阶段：从主存中复制变量到当前线程工作空间
+    * use和assign阶段：执行代码，改变共享变量
+    * store和write：用工作空间内的数据刷新到主存
+      而由于load，use，assign这三步并不是原子性的操作，就比如 i++，其实可以看作为 i = i + 1;
+
+    + MESI 缓存一致性协议
+
+- 禁止指令重排序
+
+  + DCL单例
+
+**volatile最大的缺点就是无法保证原子性。**
+
+synchronized与volatile的区别如下：
+
+- volatile是线程同步的轻量级实现，所以volatile的性能肯定是比synchronized好，volatile只能修饰变量，
+  而synchronized可以修饰方法，代码块，在新的JDK中也对synchronized进行了优化，性能也不差。
+- 多线程之间使用volatile并不会阻塞线程，synchronized会阻塞线程。
+- volatile能保证数据的可见性，但是不能保证原子性，而synchronized可以保证原子性，也可以间接的保证可见性，因为
+  它会将私有内存和公共内存中的数据进行同步。
+- volatile 只是实现可见性，synchronized解决的是线程之间对同一个资源的操作的同步性。
+
+## 线程间的通信
+
+
+
 ## 锁的分类
 1. 乐观锁/悲观锁
 2. 独享锁/共享锁
@@ -86,29 +119,6 @@ synchronized 默认情况下，使用偏向锁，如果有其他线程争用，�
 自旋锁，会占用CPU时间，不经过内核态，效率高，适用于加锁的执行时间短，线程数不能多
 OS锁（系统锁），适合执行时间长，线程数多
 
-## volatile
-作用如下：
-- 保证线程可见性：由于每个线程都有自己的工作空间，对于线程共享的变量每个线程会从主存中拷贝一份到当前线程的工作空间内，
-大致可分为几个步骤：
-    * read和load阶段：从主存中复制变量到当前线程工作空间
-    * use和assign阶段：执行代码，改变共享变量
-    * store和write：用工作空间内的数据刷新到主存
-而由于load，use，assign这三步并不是原子性的操作，就比如 i++，其实可以看作为 i = i + 1;
-    + MESI 缓存一致性协议
-- 禁止指令重排序
-    + DCL单例
-    
-
-**volatile最大的缺点就是无法保证原子性。**
-
-synchronized与volatile的区别如下：
-- volatile是线程同步的轻量级实现，所以volatile的性能肯定是比synchronized好，volatile只能修饰变量，
-而synchronized可以修饰方法，代码块，在新的JDK中也对synchronized进行了优化，性能也不差。
-- 多线程之间使用volatile并不会阻塞线程，synchronized会阻塞线程。
-- volatile能保证数据的可见性，但是不能保证原子性，而synchronized可以保证原子性，也可以间接的保证可见性，因为
-它会将私有内存和公共内存中的数据进行同步。
-- volatile 只是实现可见性，synchronized解决的是线程之间对同一个资源的操作的同步性。
-  
 ## CAS 
 Compare And Swap 又称乐观锁，CAS是无锁的操作，在多线程的环境下不需要进行申请锁和释放锁的操作，也不用挂起当前的线程等待操作系统的调度。
 
@@ -236,7 +246,10 @@ Exchanger 是 JDK 1.5 开始提供的一个用于两个工作线程之间交换�
 
 ## AQS
 
+AbstractQueuedSynchronizer
+
 VarHandle：
+
 - 普通属性原子性操作；
 - 比反射快，直接操纵二进制码
 
