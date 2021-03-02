@@ -44,6 +44,7 @@ public class MyReentrantLock implements Lock {
             if (Thread.currentThread() != getExclusiveOwnerThread()) {
                 throw new IllegalMonitorStateException();
             }
+            // 这里没有用CAS操作是因为，只有当前获取锁的线程才能够释放锁
             if (getState() - arg == 0) {
                 setExclusiveOwnerThread(null);
                 setState(0);

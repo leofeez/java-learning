@@ -246,9 +246,19 @@ Exchanger 是 JDK 1.5 开始提供的一个用于两个工作线程之间交换�
 
 ## AQS
 
-AbstractQueuedSynchronizer
+AQS指的就是juc包下的AbstractQueuedSynchronizer缩写
 
-VarHandle：
+![img](./_lock/AQS.png)
+
+在AQS中有两个比较重要的概念：
+
+- state：该值用volatile修饰，上锁的时候就需要利用CAS更改这个值，释放锁的时候就需要减少该值，当state为0的时候锁别的线程才可以获取锁。
+
+- Node：线程节点，在AQS中维护了一个双向的链表，每个节点就是线程节点
+
+  至于为什么是双向链表，是因为需要看一下前一个节点的状态
+
+VarHandle（1.9之后才有）：
 
 - 普通属性原子性操作；
 - 比反射快，直接操纵二进制码
