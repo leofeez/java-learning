@@ -1,12 +1,15 @@
-package container;
+package container.map;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author leofee
- * @date 2020/12/14
+ * @date 2020/12/15
  */
-public class T02_SynchronizedMap {
+public class T04_ConcurrentHashMap {
 
     public static int thread_count = 100;
 
@@ -16,7 +19,7 @@ public class T02_SynchronizedMap {
 
     public static UUID[] values = new java.util.UUID[thread_count * count];
 
-    public static Map<UUID, UUID> container = Collections.synchronizedMap(new HashMap<>());
+    public static ConcurrentHashMap<UUID, UUID> container = new ConcurrentHashMap<>();
 
     // 初始化元素
     static {
@@ -31,10 +34,6 @@ public class T02_SynchronizedMap {
         for (int i = 0; i < thread_count; i++) {
             threadList.add(new MyThread(i));
         }
-
-        container.computeIfAbsent(UUID.randomUUID(), (k) -> {
-            return UUID.randomUUID();
-        });
 
         long start = System.currentTimeMillis();
 

@@ -180,6 +180,9 @@ AtomicMarkableReference
 - 支持被打断，```lock.lockInterruptibly();```
 - ReentrantLock默认为非公平的锁，构造方法支持公平锁，新来的线程必选先检查是否有线程在等待锁的队列中，如果有则需要进入等待队列，
   非公平的锁对于新来的线程是有可能会抢到锁.
+  
+### Condition
+
 
 ### CountDownLatch
 
@@ -246,22 +249,30 @@ Exchanger 是 JDK 1.5 开始提供的一个用于两个工作线程之间交换�
 
 ## AQS
 
-AQS指的就是juc包下的AbstractQueuedSynchronizer缩写
+AQS指的就是juc包下的AbstractQueuedSynchronizer缩写，在AQS中有两个比较重要的概念：
+
+- state：其实就是共享资源，用volatile修饰，上锁的时候就需要利用CAS更改这个值，释放锁的时候就需要减少该值，当state为0的时候表示锁被释放。
+
+- FIFO线程等待队列：在AQS中维护了一个双向的链表，每个节点Node就是线程节点，多线程竞争共享资源state失败后会加入到该队列中。
 
 ![img](./_lock/AQS.png)
 
-在AQS中有两个比较重要的概念：
+在AbstractQueuedSynchronizer中，线程竞争后进入队列，或者锁被释放唤醒出队已经有了实现，而对竞争资源state的获取与释放需要对应的子类去实现，具体需要实现的方法如下：
+  - tryAcquire(int arg)：以独占的方式尝试去获取共享资源，成功则返回true，失败则返回false。
+  - tryRelease(int arg): 尝试去释放共享资源，成功则返回true，失败则返回false。
+  - tryAcquireShared(int arg)：以共享的方式尝试去获取共享资源，成功则返回true，否则返回false。
+  - tryReleaseShared(int arg)：以共享的方式尝试去释放共享资源，成功则返回true，否则返回false。
+  - isHeldExclusively()：判断当前线程是否以独占的方式占有共享资源，只有在用到Condition的时候才需要实现。
+  
+AQS最典型的实现就是ReentrantLock，在ReentrantLock中，有公平锁和非公平锁，所以对于占有共享资源的方式也不一样，这里以非公平锁为例：
 
-- state：该值用volatile修饰，上锁的时候就需要利用CAS更改这个值，释放锁的时候就需要减少该值，当state为0的时候锁别的线程才可以获取锁。
-
-- Node：线程节点，在AQS中维护了一个双向的链表，每个节点就是线程节点
-
-  至于为什么是双向链表，是因为需要看一下前一个节点的状态
 
 VarHandle（1.9之后才有）：
 
 - 普通属性原子性操作；
 - 比反射快，直接操纵二进制码
+
+## wait() 和 park()
 
 ## ThreadLocal
 ThreadLocal叫做线程变量，意思是ThreadLocal中填充的变量属于当前线程，该变量对其他线程而言是隔离的。
