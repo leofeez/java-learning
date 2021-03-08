@@ -19,7 +19,7 @@ public class TicketSeller01 extends Thread {
     }
 
     public static void main(String[] args) {
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 100; i++) {
             new TicketSeller01(() -> {
                 while (tickets.size() > 0) {
                     System.out.println(Thread.currentThread().getName() + "卖出了票，票号为 " + tickets.remove(0));
