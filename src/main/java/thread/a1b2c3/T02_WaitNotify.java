@@ -8,6 +8,8 @@ public class T02_WaitNotify extends Thread {
 
     static T02_WaitNotify obj = new T02_WaitNotify();
 
+    static boolean flag ;
+
     public T02_WaitNotify(Runnable target) {
         super(target);
     }
@@ -27,6 +29,14 @@ public class T02_WaitNotify extends Thread {
     }
 
     public synchronized void printLetter() {
+        while (flag) {
+            try {
+                wait();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        flag = true;
         for (String letter : letters) {
             System.out.print(letter);
             notifyAll();
@@ -42,6 +52,13 @@ public class T02_WaitNotify extends Thread {
     }
 
     public synchronized void printNumber() {
+        while (!flag) {
+            try {
+                wait();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
         for (String number : numbers) {
             System.out.print(number);
             notifyAll();
