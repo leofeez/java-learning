@@ -1,45 +1,47 @@
 package thread.a1b2c3;
 
-public class T02_WaitNotify extends Thread {
+import java.util.concurrent.CountDownLatch;
+
+public class T03_WaitNotify extends Thread {
 
     static String[] letters = {"A", "B", "C", "D", "E", "G"};
 
     static String[] numbers = {"1", "2", "3", "4", "5", "6"};
 
-    static T02_WaitNotify obj = new T02_WaitNotify();
+    static T03_WaitNotify obj = new T03_WaitNotify();
 
-    static volatile boolean flag ;
+    static CountDownLatch latch = new CountDownLatch(1);
 
-    public T02_WaitNotify(Runnable target) {
+    public T03_WaitNotify(Runnable target) {
         super(target);
     }
 
-    public T02_WaitNotify() {
+    public T03_WaitNotify() {
         super();
     }
 
     public static void main(String[] args) {
-        new T02_WaitNotify(() -> {
-            obj.printLetter();
+        new T03_WaitNotify(() -> {
+            // await()方法不会释放锁，所以必须在获取锁之前就要阻塞住
+            try {
+                latch.await();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            obj.printNumber();
         }).start();
 
-        new T02_WaitNotify(() -> {
-            obj.printNumber();
+        new T03_WaitNotify(() -> {
+            obj.printLetter();
         }).start();
     }
 
     public synchronized void printLetter() {
-        while (flag) {
-            try {
-                wait();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-        flag = true;
         for (String letter : letters) {
             System.out.print(letter);
             notifyAll();
+            // 在wait释放锁之前countDown唤醒另外一个线程
+            latch.countDown();
             try {
                 wait();
             } catch (InterruptedException e) {
@@ -52,13 +54,6 @@ public class T02_WaitNotify extends Thread {
     }
 
     public synchronized void printNumber() {
-        while (!flag) {
-            try {
-                wait();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
         for (String number : numbers) {
             System.out.print(number);
             notifyAll();

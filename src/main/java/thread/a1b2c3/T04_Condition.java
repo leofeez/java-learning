@@ -3,7 +3,7 @@ package thread.a1b2c3;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class T03_Condition extends Thread {
+public class T04_Condition extends Thread {
 
     static String[] letters = {"A", "B", "C", "D", "E", "G"};
 
@@ -13,21 +13,19 @@ public class T03_Condition extends Thread {
 
     static Condition condition = LOCK.newCondition();
 
-    public T03_Condition(Runnable target) {
+    public T04_Condition(Runnable target) {
         super(target);
     }
 
     public static void main(String[] args) {
-        new T03_Condition(T03_Condition::printLetter).start();
-
-        new T03_Condition(T03_Condition::printNumber).start();
+        new T04_Condition(T04_Condition::printLetter).start();
+        new T04_Condition(T04_Condition::printNumber).start();
     }
 
     public static void printLetter() {
         LOCK.lock();
         try {
             for (String letter : letters) {
-
                 System.out.print(letter);
                 condition.signalAll();
                 condition.await();
@@ -53,6 +51,7 @@ public class T03_Condition extends Thread {
         } catch (InterruptedException e) {
             e.printStackTrace();
         } finally {
+            condition.signalAll();
             LOCK.unlock();
         }
     }
