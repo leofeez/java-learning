@@ -267,6 +267,10 @@ AQS指的就是juc包下的AbstractQueuedSynchronizer缩写，在AQS中有两个
 AQS最典型的实现就是ReentrantLock，在ReentrantLock中，有公平锁和非公平锁，所以对于占有共享资源的方式也不一样，这里以非公平锁为例：
 
 
+  至于为什么是双向链表，是因为需要看一下前一个节点的状态
+  
+  对于AQS典型的实现就是ReentrantLock，在当前线程在加锁时，先通过CAS操作将state设置为1，如果CAS失败，则通过tryAcquire，在tryAcquire中第一步先判断state的值是否为0（这里因为state是volatile的，所以这一步判断可以提高效率），如果为0，则再次通过CAS操作将state设置为1，如果这时候CAS又失败了，则通过自旋CAS的方式（addWaiter->compareAndSetTail方法）加入到同步队列的尾部。
+
 VarHandle（1.9之后才有）：
 
 - 普通属性原子性操作；
