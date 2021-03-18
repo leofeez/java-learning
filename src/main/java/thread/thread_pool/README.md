@@ -71,6 +71,27 @@ boolean isShutdown();
 <T> Future<T> submit(Callable<T> task);
 ```
 
+### ScheduledExecutorService
+
+基于ExecutorService扩展了可对线程任务进行调度的线程池，当线程任务提交到线程池中后不一定是立即执行的，可以指定任务的延迟执行时间和任务的执行周期，主要有以下几个方法：
+
+```java 
+// 在给定的延迟时间后开始执行任务
+public ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit);
+
+// 创建并执行一个周期性的任务，任务开始于给定的初始延迟时间，后续的任务
+// 会按照给定的周期进行执行，即后续的第一个任务将在 initialDelay + period 时执行
+public ScheduledFuture<?> scheduleAtFixedRate(Runnable command,
+                                                  long initialDelay,
+                                                  long period,
+                                                  TimeUnit unit);
+// 周期性执行任务，与上一个方法同不的是，后续的第一个任务在上一个任务执行完成后再延时执行
+public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command,
+                                                     long initialDelay,
+                                                     long delay,
+                                                     TimeUnit unit);
+```
+
 ### Future和Callable
 
 从上面的ExecutorService看到submit方法接收一个Callable任务对象，返回了一个线程执行结果Future对象，在往常的Thread线程的执行任务是实现Runnable接口，Runnable接口的run()方法没有返回值，而Future对象就是在线程池中的线程任务完成后可以通过get方法拿到线程完成后的返回值。
@@ -90,19 +111,17 @@ executorService.shutdown();
 
 Future的get方法会等待线程池的执行任务完毕并返回，如果执行任务还未完成就调用get方法会阻塞当前线程。
 
-## 线程池对象
+### ThreadPoolExecutor
 
-#### ThreadPoolExecutor
-
-自定义的线程池，ThreadPoolExecutor的构造参数如下：
+在整个Executor框架中，Executor和ExecutorService定义了线程池应该有的行为（这也就是接口的职责所在），而ThreadPoolExecutor就是线程池的具体实现，在ThreadPoolExecutor中如下几个核心的参数：
 
 - corePoolSize：核心线程数量
 - maximumPoolSize：最大线程数量
-- keepAliveTime：最大闲置时间
-- timeUnit：时间单位
-- workQueue：为BlockingQueue，任务队列数量
+- keepAliveTime：当线程池中线程数量超过corePoolSize时，多余的空闲的线程最大闲置时间
+- timeUnit：keepAliveTime的时间单位
+- workQueue：为BlockingQueue，任务队列，即已提交线程池但还未被执行的任务队列
 - threadFactory：创建线程的工厂
-- rejectHandler：拒绝策略，在JDK中有提供四种
+- rejectHandler：拒绝策略，在JDK中内置了以下四种：
   * Abort：抛异常
   * Discard：扔掉，不抛异常
   * DiscardOldest：扔掉排队时间最久的
@@ -113,3 +132,53 @@ Future的get方法会等待线程池的执行任务完毕并返回，如果执�
 - 分解汇总的任务
 - 用很少的线程可以执行很多的任务（子任务）TPE做不到先执行子任务
 - CPU密集型
+
+### Executors
+
+Executors是线程池的工厂类，通过Executors可以取得各种具有特定功能的线程池，Executors其实就是封装了ThreadPoolExecutor的实例化，主要有以下几个工厂方法：
+
+- newFixedThreadPool(int nThreads)：返回一个固定线程数量的线程池，该线程池中的线程数量始终不变，当有新的任务提交时，如果有空闲的线程则立即执行，否则进入等待队列。
+
+  ```java
+  public static ExecutorService newFixedThreadPool(int nThreads) {
+  		// corePoolSize 和 maximumPoolSize 都设置为 nThreads
+    	return new ThreadPoolExecutor(nThreads, nThreads,
+                                    0L, TimeUnit.MILLISECONDS,
+                                    new LinkedBlockingQueue<Runnable>());
+  }
+  ```
+
+- newWorkStealingPool(int parallelism)：
+
+  ```java
+  public static ExecutorService newWorkStealingPool(int parallelism) {
+    	return new ForkJoinPool(
+      				 parallelism,
+               ForkJoinPool.defaultForkJoinWorkerThreadFactory,
+               null, true);
+  }
+  ```
+
+- newSingleThreadExecutor()：返回一个只有一个线程的线程池，若有额外的任务提交到线程池则会进入等待队列。
+
+  ```java
+  public static ExecutorService newSingleThreadExecutor() {
+     	// corePoolSize 和 maximumPoolSize 都为 1
+      return new FinalizableDelegatedExecutorService
+          (new ThreadPoolExecutor(1, 1,
+                                  0L, TimeUnit.MILLISECONDS,
+                                  new LinkedBlockingQueue<Runnable>()));
+  }
+  ```
+
+- newCachedThreadPool(): 返回一个可以根据实际情况调整线程数量的线程池，该线程池的线程数量不确定，若有空闲的可复用的线程则会优先使用可复用的线程，若没有空闲的，又有新的任务提交到线程池则会创建新的线程处理任务，所有的线程的任务都执行完毕后将返回线程池进行复用。
+
+  ```java
+  public static ExecutorService newCachedThreadPool() {
+  		return new ThreadPoolExecutor(0, Integer.MAX_VALUE,
+                                        60L, TimeUnit.SECONDS,
+                                        new SynchronousQueue<Runnable>());
+  }
+  ```
+
+  从以上几种线程池对象可以看出，主要区别就在于实例化ThreadPoolExecutor的参数不一样

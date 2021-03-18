@@ -8,7 +8,7 @@ import java.util.concurrent.*;
  */
 public class MyThreadPoolExecutor {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws ExecutionException, InterruptedException {
         ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(
                 // 核心线程数
                 2,
@@ -24,5 +24,13 @@ public class MyThreadPoolExecutor {
                 Executors.defaultThreadFactory(),
                 // 拒绝策略 JDK 提供了4中
                 new ThreadPoolExecutor.AbortPolicy());
+        Future<String> future = threadPoolExecutor.submit(() -> {
+            Thread.sleep(1000);
+            return "hello my thread pool executor";
+        });
+
+        System.out.println(future.get());
+
+        threadPoolExecutor.shutdown();
     }
 }
