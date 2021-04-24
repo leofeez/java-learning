@@ -36,14 +36,13 @@ public class Condition02 extends Thread {
         lock.lock();
 
         try {
-            if (flag) {
-                System.out.println("A");
-                TimeUnit.SECONDS.sleep(1);
-                flag = false;
-                condition.signal();
-            } else {
+            while (!flag) {
                 condition.await();
             }
+            System.out.println("A");
+            TimeUnit.SECONDS.sleep(1);
+            flag = false;
+            condition.signal();
         } catch (InterruptedException e) {
             e.printStackTrace();
         } finally {
@@ -54,14 +53,13 @@ public class Condition02 extends Thread {
     public static void B() {
         lock.lock();
         try {
-            if (!flag) {
-                System.out.println("B");
-                TimeUnit.SECONDS.sleep(1);
-                flag = true;
-                condition.signal();
-            } else {
+            while(flag) {
                 condition.await();
             }
+            System.out.println("B");
+            TimeUnit.SECONDS.sleep(1);
+            flag = true;
+            condition.signal();
         } catch (InterruptedException e) {
             e.printStackTrace();
         } finally {

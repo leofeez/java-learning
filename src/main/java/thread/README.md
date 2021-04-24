@@ -3,6 +3,8 @@
 它是系统进行分配和调度的一个独立单元。
 - 线程：线程是在进程中独立运行的子任务。
 - 多线程：多线程是异步的，千万不要把在IDE中代码的顺序当做是线程的执行顺序，线程被调用的时机是随机的。
+  多线程是通过线程轮流切换并分配处理器执行时间的方式来实现的。
+  
 
 ## 线程的创建
 - 继承Thread，重写run()方法
@@ -70,19 +72,57 @@ interrupt()，该方法仅仅是在当前线程打了一个停止的标记，并
 
 作用如下：
 
-- 保证线程可见性：由于每个线程都有自己的工作空间，对于线程共享的变量每个线程会从主存中拷贝一份到当前线程的工作空间内，
-  大致可分为几个步骤：
-
-    * read和load阶段：从主存中复制变量到当前线程工作空间
-    * use和assign阶段：执行代码，改变共享变量
+- 保证线程可见性：由于每个线程都有自己的工作空间，对于线程共享的变量每个线程会从主存中拷贝一份到当前线程的工作空间内，线程只能访问自己工作空间的内存，Java的内存模型中定义了8中原子性的操作，大致可分为：
+  
+  * read和load阶段：从主存中复制变量到当前线程工作空间
+    * use和assign阶段：执行代码，改变共享变量，assign赋值给变量副本
     * store和write：用工作空间内的数据刷新到主存
-      而由于load，use，assign这三步并不是原子性的操作，就比如 i++，其实可以看作为 i = i + 1;
+      而由于load，use，assign这三步并不是原子性的操作，就比如 i++，其实可以看作为 读取i的值，修改i的值，写回i的值这三步进行的。
+  
+  + MESI 缓存一致性协议
+  
 
-    + MESI 缓存一致性协议
+  
+- 禁止指令重排序：
 
-- 禁止指令重排序
+  ```java
+  volatile boolean isOk = false;
+  
+  // A线程
+  A.init();
+  isOk = true;
+  
+  // B线程
+  while (!isOk) {
+    sleep();
+  }
+  B.init();
+  
+  ```
 
-  + DCL单例
+  上面这个例子如果不用volatile修饰，则jvm进行指令重排序之后可能会导致isOk的赋值在A.init()之前，导致B线程和A线程之间的依赖关系发生错误。
+
+  指令重排序遵循的两大原则：
+
+  - **as-if-serial规则**：as-if-serial规则是指不管如何重排序（编译器与处理器为了提高并行度），（单线程）程序的结果不能被改变。这是编译器、Runtime、处理器必须遵守的语义。
+
+  - **happens-before规则**：
+    * **程序顺序规则：**一个线程中的每个操作，happens-before于线程中的任意后续操作。
+    * **监视器锁规则****：**一个锁的解锁，happens-before于随后对这个锁的加锁。**
+    * **volatile变量规则：**对一个volatile域的写，happens-before于任意后续对这个volatile域的读。
+    * **传递性：**如果（A）happens-before（B），且（B）happens-before（C），那么（A）happens-before（C）。
+    * **线程start()规则：**主线程A启动线程B，线程B中可以看到主线程启动B之前的操作。也就是start() happens-before 线程B中的操作。
+    * **线程join()规则：**主线程A等待子线程B完成，当子线程B执行完毕后，主线程A可以看到线程B的所有操作。也就是说，子线程B中的任意操作，happens-before join()的返回。
+    * **中断规则：**一个线程调用另一个线程的interrupt，happens-before于被中断的线程发现中断。
+    * **终结规则：**一个对象的构造函数的结束，happens-before于这个对象finalizer的开始。
+
+**概念：**前一个操作的结果可以被后续的操作获取。讲直白点就是前面一个操作把变量a赋值为1，那后面一个操作肯定能知道a已经变成了1。
+
+- happens-before（先行发生）规则如下：
+
+虽然，（1）-happensbefore ->（2）,（2）-happens before->（3），但是计算顺序(1)(2)(3)与(2)(1)(3)对于l、w、area变量的结果并无区别。编译器、Runtime在优化时可以根据情况重排序（1）与（2），而丝毫不影响程序的结果。
+
++ DCL单例
 
 **volatile最大的缺点就是无法保证原子性。**
 
@@ -91,8 +131,7 @@ synchronized与volatile的区别如下：
 - volatile是线程同步的轻量级实现，所以volatile的性能肯定是比synchronized好，volatile只能修饰变量，
   而synchronized可以修饰方法，代码块，在新的JDK中也对synchronized进行了优化，性能也不差。
 - 多线程之间使用volatile并不会阻塞线程，synchronized会阻塞线程。
-- volatile能保证数据的可见性，但是不能保证原子性，而synchronized可以保证原子性，也可以间接的保证可见性，因为
-  它会将私有内存和公共内存中的数据进行同步。
+- volatile能保证数据的可见性，但是不能保证原子性，而synchronized可以保证原子性，也可以间接的保证可见性，因为它会将私有内存和公共内存中的数据进行同步。
 - volatile 只是实现可见性，synchronized解决的是线程之间对同一个资源的操作的同步性。
 
 ## 线程间的通信
@@ -109,17 +148,9 @@ synchronized与volatile的区别如下：
 7. 偏向锁/轻量级锁/重量级锁
 8. 自旋锁
 
-#### 锁升级
-synchronized 默认情况下，使用偏向锁，如果有其他线程争用，升级为自旋锁，类似于while(i< 10) i++, 自旋10次
-如果此时还是无法获取到锁，则升级为重量级锁 OS锁
-改进后的synchronized并不比Atomic差
+### 乐观锁/悲观锁
 
-偏向锁:
-
-自旋锁，会占用CPU时间，不经过内核态，效率高，适用于加锁的执行时间短，线程数不能多
-OS锁（系统锁），适合执行时间长，线程数多
-
-## CAS 
+#### 乐观锁之 CAS 
 Compare And Swap 又称乐观锁，CAS是无锁的操作，在多线程的环境下不需要进行申请锁和释放锁的操作，也不用挂起当前的线程等待操作系统的调度。
 
 在CAS操作中包含三个操作数，内存值V，期望值A，新值B，compareAndSet(obj, expected, newValue);
@@ -156,7 +187,6 @@ CAS使用：
     	return var5;
   }
   ```
-
   
 
 - LongAdder：Java8的新类LongAdder，尝试使用分段CAS以及自动分段迁移的方式来提升多线程高并发执行CAS操作的性能，核心思想是热点分离。
@@ -169,7 +199,7 @@ AtomicMarkableReference
 - CAS开销问题：由于CAS失败会自旋，消耗CPU，如果线程较多、资源抢占激烈、命中率低的情况下，不断的循环会不断的消耗资源，浪费CPU资源。
 - 只能保证一个共享变量的原子操作。
 
-## LOCK 
+#### 悲观锁
 
 ![](lock.jpg)
 
@@ -263,12 +293,12 @@ AQS指的就是juc包下的AbstractQueuedSynchronizer缩写，在AQS中有两个
   - tryAcquireShared(int arg)：以共享的方式尝试去获取共享资源，成功则返回true，否则返回false。
   - tryReleaseShared(int arg)：以共享的方式尝试去释放共享资源，成功则返回true，否则返回false。
   - isHeldExclusively()：判断当前线程是否以独占的方式占有共享资源，只有在用到Condition的时候才需要实现。
-  
+
 AQS最典型的实现就是ReentrantLock，在ReentrantLock中，有公平锁和非公平锁，所以对于占有共享资源的方式也不一样，这里以非公平锁为例：
 
 
   至于为什么是双向链表，是因为需要看一下前一个节点的状态
-  
+
   对于AQS典型的实现就是ReentrantLock，在当前线程在加锁时，先通过CAS操作将state设置为1，如果CAS失败，则通过tryAcquire，在tryAcquire中第一步先判断state的值是否为0（这里因为state是volatile的，所以这一步判断可以提高效率），如果为0，则再次通过CAS操作将state设置为1，如果这时候CAS又失败了，则通过自旋CAS的方式（addWaiter->compareAndSetTail方法）加入到同步队列的尾部。
 
 VarHandle（1.9之后才有）：
