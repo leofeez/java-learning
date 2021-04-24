@@ -94,6 +94,8 @@ public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command,
 
 ### Future和Callable
 
+#### Future
+
 从上面的ExecutorService看到submit方法接收一个Callable任务对象，返回了一个线程执行结果Future对象，在往常的Thread线程的执行任务是实现Runnable接口，Runnable接口的run()方法没有返回值，而Future对象就是在线程池中的线程任务完成后可以通过get方法拿到线程完成后的返回值。
 
 ```java
@@ -111,23 +113,54 @@ executorService.shutdown();
 
 Future的get方法会等待线程池的执行任务完毕并返回，如果执行任务还未完成就调用get方法会阻塞当前线程。
 
+#### FutureTask
+
+同时支持 Ruunable/ Callable 和 Future 的功能
+
+#### CompletableFuture
+
+对多个Future的结果进行管理
+
+```java
+CompletableFuture.supplyAsync(runnable);
+CompletableFuture.allOf(...);
+```
+
+
+
 ### ThreadPoolExecutor
 
-在整个Executor框架中，Executor和ExecutorService定义了线程池应该有的行为（这也就是接口的职责所在），而ThreadPoolExecutor就是线程池的具体实现，在ThreadPoolExecutor中如下几个核心的参数：
+在整个Executor框架中，Executor和ExecutorService定义了线程池应该有的行为（这也就是接口的职责所在），而ThreadPoolExecutor就是线程池的具体实现，在ThreadPoolExecutor中如下7个核心的参数：
 
 - corePoolSize：核心线程数量
+
 - maximumPoolSize：最大线程数量
+
 - keepAliveTime：当线程池中线程数量超过corePoolSize时，多余的空闲的线程最大闲置时间
+
 - timeUnit：keepAliveTime的时间单位
+
 - workQueue：为BlockingQueue，任务队列，即已提交线程池但还未被执行的任务队列
-- threadFactory：创建线程的工厂
-- rejectHandler：拒绝策略，在JDK中内置了以下四种：
-  * Abort：抛异常
+
+- threadFactory：创建线程的工厂，建议自定义线程工厂，实现`ThreadFactory`，指定线程名称的生成规则。
+
+- rejectHandler：拒绝策略，在线程池中线程已经用完了，同时等待队列workQueue已经无法加入新的任务的时候会执行拒绝策略，在JDK中内置了以下四种：
+  * Abort：抛异常，阻止系统正常工作。
   * Discard：扔掉，不抛异常
   * DiscardOldest：扔掉排队时间最久的
   * CallerRuns:调用者处理任务，比如谁提交了任务，谁去执行
+  
+  但大多数情况都需要自定义自己的拒绝策略，实现`RejectedExecutionHandler`接口：
+  
+  ```java
+  public interface RejectedExecutionHandler {
+      void rejectedExecution(Runnable r, ThreadPoolExecutor executor);
+  }
+  ```
+  
+  
 
-#### ForkJoinPool
+### ForkJoinPool
 
 - 分解汇总的任务
 - 用很少的线程可以执行很多的任务（子任务）TPE做不到先执行子任务
