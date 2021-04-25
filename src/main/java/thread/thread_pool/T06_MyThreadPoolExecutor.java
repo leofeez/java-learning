@@ -41,7 +41,14 @@ public class T06_MyThreadPoolExecutor {
         threadPool.submit(callable);
     }
 
+    /**
+     * 线程池大小的经验公式为：nThreads = Ncpu * Ucpu *（1 + W/C）
+     *
+     * @return 自定义线程池
+     */
     public static ThreadPoolExecutor getThreadPool() {
+        // CPU的核心数
+        int processors = Runtime.getRuntime().availableProcessors();
         return new ThreadPoolExecutor(
                 // 核心线程数
                 2,
@@ -56,6 +63,21 @@ public class T06_MyThreadPoolExecutor {
                 // 创建线程的工厂（建议自定义）
                 Executors.defaultThreadFactory(),
                 // 拒绝策略 JDK 提供了4种
-                new ThreadPoolExecutor.AbortPolicy());
+                new ThreadPoolExecutor.AbortPolicy()) {
+            @Override
+            protected void beforeExecute(Thread t, Runnable r) {
+                System.out.println("准备执行" + t.getName());
+            }
+
+            @Override
+            protected void afterExecute(Runnable r, Throwable t) {
+                System.out.println("执行完成");
+            }
+
+            @Override
+            protected void terminated() {
+                System.out.println("线程池关闭");
+            }
+        };
     }
 }
