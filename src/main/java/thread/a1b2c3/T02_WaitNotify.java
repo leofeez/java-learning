@@ -20,25 +20,20 @@ public class T02_WaitNotify extends Thread {
 
     public static void main(String[] args) {
         new T02_WaitNotify(() -> {
-            obj.printLetter();
+            obj.printNumber();
         }).start();
 
         new T02_WaitNotify(() -> {
-            obj.printNumber();
+            obj.printLetter();
         }).start();
+
+
     }
 
     public synchronized void printLetter() {
-        while (flag) {
-            try {
-                wait();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-        flag = true;
         for (String letter : letters) {
             System.out.print(letter);
+            flag = true;
             notifyAll();
             try {
                 wait();
@@ -52,6 +47,7 @@ public class T02_WaitNotify extends Thread {
     }
 
     public synchronized void printNumber() {
+        // 保证打印数字线程后执行
         while (!flag) {
             try {
                 wait();

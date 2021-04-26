@@ -24,6 +24,7 @@ public class T01_LockSupport extends Thread {
                 LockSupport.unpark(t2);
                 LockSupport.park();
             }
+            LockSupport.unpark(t2);
         });
 
 
@@ -33,6 +34,7 @@ public class T01_LockSupport extends Thread {
                 System.out.print(number);
                 LockSupport.unpark(t1);
             }
+            LockSupport.unpark(t1);
         });
 
         t1.start();

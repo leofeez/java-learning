@@ -37,11 +37,13 @@ public class T03_WaitNotify extends Thread {
     }
 
     public synchronized void printLetter() {
+        // 在wait释放锁之前countDown唤醒另外一个线程
+        latch.countDown();
+
         for (String letter : letters) {
             System.out.print(letter);
             notifyAll();
-            // 在wait释放锁之前countDown唤醒另外一个线程
-            latch.countDown();
+
             try {
                 wait();
             } catch (InterruptedException e) {

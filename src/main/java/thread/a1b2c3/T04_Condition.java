@@ -40,10 +40,10 @@ public class T04_Condition extends Thread {
     }
 
     public static void printNumber() {
+        // TODO 这里也需要保证数字线程后执行
         LOCK.lock();
         try {
             for (String number : numbers) {
-
                 System.out.print(number);
                 condition.signalAll();
                 condition.await();

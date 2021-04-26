@@ -21,8 +21,8 @@ public class T05_Condition extends Thread {
 
     public static void main(String[] args) {
 
-        new T05_Condition(T05_Condition::printNumber).start();
         new T05_Condition(T05_Condition::printLetter).start();
+        new T05_Condition(T05_Condition::printNumber).start();
     }
 
     public static void printLetter() {
