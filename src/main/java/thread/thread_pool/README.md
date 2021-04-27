@@ -115,15 +115,116 @@ Future的get方法会等待线程池的执行任务完毕并返回，如果执�
 
 #### FutureTask
 
-同时支持 Ruunable/ Callable 和 Future 的功能
+同时支持 Ruunable/ Callable 和 Future 的功能，即既是一个Runnable/Callable又可以作为一个Future接收子线程的返回值。
+
+```java
+// 创建线程池
+ExecutorService threadPool = Executors.newFixedThreadPool(2);
+// FutureTask既可以作为一个task，也可以作为一个Future返回线程执行的结果
+FutureTask<String> futureTask = new FutureTask<>(() -> {
+    TimeUnit.SECONDS.sleep(1);
+    return "Hello world";
+});
+// 提交FutureTask到线程池
+threadPool.submit(futureTask);
+// 获取子线程的返回值
+System.out.println(futureTask.get());
+// 关闭线程池
+threadPool.shutdown();
+```
+
+
 
 #### CompletableFuture
 
-对多个Future的结果进行管理
+从Future可以看出，Future异步执行的时候，主线程如果需要拿到子线程的返回值则需要利用`get()`方法进行等待阻塞，而`CompletableFuture`在原Future的基础上进行了改进，因为在Jdk1.8之后提供了函数式编程，CompletableFuture的很多方法都可以接收`Supplier`，`Consumer`等这类支持函数式编程的对象，还支持链式的处理。
+
+不仅仅如此，还支持多个CompletableFuture的结果的合并处理。
+
+简单用法如下，支持链式的处理：
 
 ```java
-CompletableFuture.supplyAsync(runnable);
-CompletableFuture.allOf(...);
+
+public static void main(String[] args) throws InterruptedException {
+
+    CompletableFuture.supplyAsync(() -> {
+        double v = new Random().nextDouble();
+        System.out.println("生成的随机数为：" + v);
+        return v;
+    })
+    // 对上一步结果进一步处理并返回结果
+    .thenApplyAsync(value -> {
+        value = value * 100;
+        System.out.println("将随机数 * 100");
+        return value;
+    })
+    // 对最终的结果进行最终的处理
+    .thenAccept(value -> {
+        System.out.println("打印结果为：" + value);
+    });
+
+    // 防止主线程提前结束
+    Thread.sleep(1000);
+}
+```
+
+高级用法：
+
+> 现在有一个场景，提供一个服务，同时去天猫，京东，亚马逊查询一个商品的价格。
+
+如果采用传统的串行方式，则需要分别调用三个接口去查询。
+
+利用CompletableFuture则可以分别建立三个子任务同时去查询，如果需要等待最终的结果可以利用allOf()将三个子任务进行汇总，再利用join()等待所有任务完成。
+
+```java
+public static void main(String[] args) throws InterruptedException {
+
+    long start, end;
+
+    start = System.currentTimeMillis();
+    CompletableFuture<Void> tmPrice = CompletableFuture
+            .supplyAsync(() -> getFromTm())
+            .thenAccept(price -> System.out.println("tm price:" + price));
+    CompletableFuture<Void> jdPrice = CompletableFuture
+            .supplyAsync(() -> getFromJd())
+            .thenAccept(price -> System.out.println("jd price:" + price));
+    CompletableFuture<Void> ymxPrice = CompletableFuture
+            .supplyAsync(() -> getFromYmx())
+            .thenAccept(price -> System.out.println("ymx price:" + price));
+
+    CompletableFuture<Void> allOf = CompletableFuture.allOf(tmPrice, jdPrice, ymxPrice);
+
+    // 等待所有子线程完成
+    allOf.join();
+
+    end = System.currentTimeMillis();
+
+    System.out.println("总共耗时：" + (end - start));
+
+}
+
+/** 查询天猫价格*/
+public static double getFromTm() {
+    sleep();
+    return new Random().nextDouble() * 100;
+}
+/** 查询京东价格*/
+public static double getFromJd() {
+    sleep();
+    return new Random().nextDouble() * 100;
+}
+/** 查询亚马逊价格*/
+public static double getFromYmx() {
+    sleep();
+    return new Random().nextDouble() * 100;
+}
+public static void sleep() {
+    try {
+        TimeUnit.SECONDS.sleep(1);
+    } catch (InterruptedException e) {
+        e.printStackTrace();
+    }
+}
 ```
 
 

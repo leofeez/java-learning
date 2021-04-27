@@ -28,6 +28,9 @@ public class T02_Future {
 
         Thread.sleep(3000);
 
+        while(future.isDone()) {
+        }
+
         future.cancel(false);
 
         System.out.println(future.isCancelled());
