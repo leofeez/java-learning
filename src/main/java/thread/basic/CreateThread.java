@@ -33,10 +33,11 @@ public class CreateThread {
 
     /**
      * 创建线程的三种方式
-     * <ul>
-     *     <li>继承Thread，重写run()方法
-     *     <li>实现Runnable，实现run()方法, 推荐，因为java只能单继承，所以实现接口可以避免局限性
-     *     <li>利用lambda表达式，实现run()方法/利用线程池 {@code Executors.newCachedThread()}
+     * <pre>
+     * 1. 继承Thread，重写run()方法
+     * 2. 实现Runnable，实现run()方法, 推荐，因为java只能单继承，所以实现接口可以避免局限性
+     * 3. 利用lambda表达式，实现run()方法/利用线程池 {@code Executors.newCachedThread()}
+     * </pre>
      *
      */
     public static void main(String[] args) {

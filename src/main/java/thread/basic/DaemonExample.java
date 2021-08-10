@@ -9,27 +9,31 @@ import java.util.concurrent.TimeUnit;
 public class DaemonExample {
 
     private static int count = 0;
+    private static int COUNT_DAEMON = 0;
+
+    static DaemonThread daemonThread;
 
     public static void main(String[] args) throws InterruptedException {
+        MainThread mainThread = new MainThread();
+        mainThread.start();
 
-        DaemonThread daemonThread = new DaemonThread();
-        daemonThread.setDaemon(true);
-        daemonThread.start();
-
-
-        Thread.sleep(10000);
-
-        System.out.println("主线程结束了，守护线程也会自动销毁......");
-
+//        mainThread.join();
+//
+//        System.out.println(mainThread.getState());
     }
 
-    private static class DaemonThread extends Thread {
+    private static class MainThread extends Thread {
 
         @Override
         public void run() {
             super.run();
+            System.out.println("主线程开始运行......");
 
-            while (true) {
+            daemonThread = new DaemonThread();
+            daemonThread.setDaemon(true);
+            daemonThread.start();
+
+            while (count < 5) {
                 System.out.println(++count);
                 try {
                     TimeUnit.SECONDS.sleep(1);
@@ -38,6 +42,27 @@ public class DaemonExample {
                 }
             }
 
+            System.out.println("主线程运行结束......");
+        }
+    }
+
+    private static class DaemonThread extends Thread {
+
+        @Override
+        public void run() {
+
+            System.out.println("守护线程开始运行......");
+
+            super.run();
+
+            while (true) {
+                System.out.println("守护线程" + ++COUNT_DAEMON);
+                try {
+                    TimeUnit.SECONDS.sleep(1);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 }

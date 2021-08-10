@@ -1,5 +1,6 @@
 package thread.a1b2c3;
 
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -17,9 +18,10 @@ public class T04_Condition extends Thread {
         super(target);
     }
 
-    public static void main(String[] args) {
-        new T04_Condition(T04_Condition::printLetter).start();
+    public static void main(String[] args) throws InterruptedException {
         new T04_Condition(T04_Condition::printNumber).start();
+        TimeUnit.SECONDS.sleep(1);
+        new T04_Condition(T04_Condition::printLetter).start();
     }
 
     public static void printLetter() {

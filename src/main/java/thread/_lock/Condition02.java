@@ -9,7 +9,7 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class Condition02 extends Thread {
 
-    static boolean flag = true;
+    static boolean flag = false;
 
     static ReentrantLock lock = new ReentrantLock();
 
@@ -19,29 +19,36 @@ public class Condition02 extends Thread {
         super(target);
     }
 
-    public static void main(String[] args) {
-        new Condition02(() -> {
-            for (; ; ) {
-                A();
-            }
-        }).start();
+    public static void main(String[] args) throws InterruptedException {
         new Condition02(() -> {
             for (; ; ) {
                 B();
             }
         }).start();
+
+        TimeUnit.SECONDS.sleep(1);
+
+        new Condition02(() -> {
+            for (; ; ) {
+                A();
+            }
+        }).start();
+
+
+
+
     }
 
     public static void A() {
         lock.lock();
 
         try {
-            while (!flag) {
+            while (flag) {
                 condition.await();
             }
             System.out.println("A");
             TimeUnit.SECONDS.sleep(1);
-            flag = false;
+            flag = true;
             condition.signal();
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -53,12 +60,12 @@ public class Condition02 extends Thread {
     public static void B() {
         lock.lock();
         try {
-            while(flag) {
+            while(!flag) {
                 condition.await();
             }
             System.out.println("B");
             TimeUnit.SECONDS.sleep(1);
-            flag = true;
+            flag = false;
             condition.signal();
         } catch (InterruptedException e) {
             e.printStackTrace();

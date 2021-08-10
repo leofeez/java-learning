@@ -1,5 +1,7 @@
 package thread.a1b2c3;
 
+import java.util.concurrent.TimeUnit;
+
 public class T02_WaitNotify extends Thread {
 
     static String[] letters = {"A", "B", "C", "D", "E", "G"};
@@ -8,7 +10,10 @@ public class T02_WaitNotify extends Thread {
 
     static T02_WaitNotify obj = new T02_WaitNotify();
 
-    static volatile boolean flag ;
+    /**
+     * 用于控制先打印字母
+     */
+    static boolean shouldPrintLetterFlag = true;
 
     public T02_WaitNotify(Runnable target) {
         super(target);
@@ -18,10 +23,12 @@ public class T02_WaitNotify extends Thread {
         super();
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         new T02_WaitNotify(() -> {
             obj.printNumber();
         }).start();
+
+        TimeUnit.SECONDS.sleep(1);
 
         new T02_WaitNotify(() -> {
             obj.printLetter();
@@ -31,9 +38,16 @@ public class T02_WaitNotify extends Thread {
     }
 
     public synchronized void printLetter() {
+        while (!shouldPrintLetterFlag) {
+            try {
+                wait();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        shouldPrintLetterFlag = false;
         for (String letter : letters) {
             System.out.print(letter);
-            flag = true;
             notifyAll();
             try {
                 wait();
@@ -47,8 +61,7 @@ public class T02_WaitNotify extends Thread {
     }
 
     public synchronized void printNumber() {
-        // 保证打印数字线程后执行
-        while (!flag) {
+        while (shouldPrintLetterFlag) {
             try {
                 wait();
             } catch (InterruptedException e) {
