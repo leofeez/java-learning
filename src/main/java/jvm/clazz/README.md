@@ -1,11 +1,4 @@
-# Java 虚拟机
-常见的JVM实现 **Hotspot**，命令行输入 `java -version` 会输出以下信息：
-```java
-java version "1.8.0_271"
-Java(TM) SE Runtime Environment (build 1.8.0_271-b09)
-Java HotSpot(TM) 64-Bit Server VM (build 25.271-b09, mixed mode)
-```
-## class 文件结构
+# class 文件结构
 二进制字节流
 
 16进制内容如下：
@@ -15,14 +8,18 @@ Java HotSpot(TM) 64-Bit Server VM (build 25.271-b09, mixed mode)
 cafe babe 0000 0034 0010 0a00 0300 0d07
 000e 0700 0f01 0006 3c69 6e69 743e 0100
 ......
+|------| |-----|
+|access| |this |
+|flags | |class|
+|------| |-----|
 ```
 - cafe babe：magic number(魔数)，4个字节，文件类型标识，标识为class文件
-- 0000     ：minor version 小版本，
-- 0034     ：major version 大版本，比如java8 是52.xx大版本
+- 0000     ：minor version 小版本，2个字节
+- 0034     ：major version 大版本，2个字节，比如java8 是52.xx大版本
 - 0010     ：(constant_pool_count -1, 之所以减一是因为0位作为预留位)，常量池中有多少个常量，比如上面的就是15个
-- 常量池内容
+- constant pool里面的内容
 
-利用javap -v class路径输出，class文件结构如下：
+利用javap -v class路径输出，class文件结构如下，或者通过IDEA插件jclass lib：
 ```
   Last modified 2021-4-27; size 284 bytes
   MD5 checksum 0f67da71e28c64825a0733c5f45a9734
