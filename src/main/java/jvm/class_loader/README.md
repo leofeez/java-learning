@@ -1,17 +1,9 @@
-# JVM java 虚拟机
-常见的JVM实现 **Hotspot**，命令行输入 `java -version` 会输出以下信息：
-```java
-java version "1.8.0_271"
-Java(TM) SE Runtime Environment (build 1.8.0_271-b09)
-Java HotSpot(TM) 64-Bit Server VM (build 25.271-b09, mixed mode)
-```
-HotSpot是JVM的一种实现
-
-### 什么是类加载机制？
+# 什么是类加载机制？
 java虚拟机将描述类的数据从Class文件加载到内存，并对数据进行校验，转换、解析、初始化并最终形成可以被JVM
-可以直接执行的类型，这个过程就可以被称之为虚拟机的类加载机制。
+可以直接执行的指令，这个过程就可以被称之为虚拟机的类加载机制。
 
-### 类加载的过程
+## 类加载的过程
+ 
 Loading ->  Linking(verification -> preparation -> resolution) -> Initializing
 
 - Loading: 装载 class 文件到内存。
@@ -24,28 +16,30 @@ Loading ->  Linking(verification -> preparation -> resolution) -> Initializing
   
 - Initializing: 赋初始值，执行静态代码块
 
-### 什么是类加载器？
+## 什么是类加载器？
 实现通过一个类的全限定名来获取描述该类的二进制流的动作的代码就叫做类加载器。
+类加载器主要分为以下几类：
 
-Bootstrap: 加载lib.rt charset.jar 等核心内容，获取Bootstrap类加载器会返回null，因为是由C++实现。
-Extension: 加载扩展jar包，jre/lib/ext/*.jar
-App: 加载classpath的内容
-Custom Class Loader: 自定义类加载器
+- Bootstrap: 加载lib.rt charset.jar 等核心内容，获取Bootstrap类加载器会返回null，因为是由C++实现。
+- Extension: 加载扩展jar包，jre/lib/ext/*.jar
+- App: 加载classpath的内容
+- Custom Class Loader: 自定义类加载器
 
-```
-JVM 是按需动态加载，采用的是双亲委派机制。                           自顶向下进行实际查找和加载                          
-                    ^                                                  |                      
-                    |                                                  |
-                    |                                                  |
-                    |                                                  |
-                    |                                                  
-自底向上检查，该类是否已经加载，parent方向                                  
-```
+其中Bootstrap Class loader是JVM中最顶级的，由JVM创建
 
-
-### 双亲委派原则
+## 双亲委派原则
 一个类加载器收到类加载请求后不会立即先加载自己，而是先去让父级的加载器去检查缓存中，是否已经加载，层层迭代，到最顶层加载器都没有，
 会往下进行委派去加载指定的类。
+
+```
+JVM 是按需动态加载，采用的是双亲委派机制。                               自顶向下进行实际查找和加载                          
+                    ⬆                      Bootstrap ClassLoader              ⬇                      
+                    ⬆                      Extension ClassLoader              ⬇
+                    ⬆                      App ClassLoader                    ⬇
+                    ⬆                      Custom ClassLoader                 ⬇
+                    ⬆                                                         ⬇
+自底向上检查，该类是否已经加载，parent方向                       找到则load到内存当中，找不到则抛出ClassNotFoundException
+```
 
 双亲委派是为了安全问题（比如自定义的ClassLoader加载一个自定义的java.lang.String），也解决了资源浪费的问题
 - 避免重复加载
@@ -56,15 +50,109 @@ JVM 是按需动态加载，采用的是双亲委派机制。                   
 
 *注：父加载器不是类加载器的加载器，也不是类加载器的父类加载器。*
 
-### Launcher
+## Launcher
+Launcher是java程序的入口，Launcher的ClassLoader是BootstrapClassLoader，在Launcher创建的同时，还会创建`ExtClassLoader`，
+`AppClassLoader`。
 
-### ClassLoader源码
+```java
+    public Launcher() {
+        Launcher.ExtClassLoader var1;
+        
+        // 创建 ExtClassLoader
+        try {
+            var1 = Launcher.ExtClassLoader.getExtClassLoader();
+        } catch (IOException var10) {
+            throw new InternalError("Could not create extension class loader", var10);
+        }
+
+        // 创建 AppClassLoader
+        try {
+            this.loader = Launcher.AppClassLoader.getAppClassLoader(var1);
+        } catch (IOException var9) {
+            throw new InternalError("Could not create application class loader", var9);
+        }
+
+        // 设置当前 Thread 上下文 Class loader
+        Thread.currentThread().setContextClassLoader(this.loader);
+        String var2 = System.getProperty("java.security.manager");
+        if (var2 != null) {
+            SecurityManager var3 = null;
+            if (!"".equals(var2) && !"default".equals(var2)) {
+                try {
+                    var3 = (SecurityManager)this.loader.loadClass(var2).newInstance();
+                } catch (IllegalAccessException var5) {
+                } catch (InstantiationException var6) {
+                } catch (ClassNotFoundException var7) {
+                } catch (ClassCastException var8) {
+                }
+            } else {
+                var3 = new SecurityManager();
+            }
+
+            if (var3 == null) {
+                throw new InternalError("Could not create SecurityManager: " + var2);
+            }
+            System.setSecurityManager(var3);
+        }
+    }
+```
+
+## ClassLoader源码
+ClassLoader 是一个抽象类，像 ExtClassLoader，AppClassLoader 都是由该类派生出来，实现不同的类装载机制。
+在ClassLoader 中的loadClass是类装载的入口：
+```java
+    protected Class<?> loadClass(String name, boolean resolve)
+        throws ClassNotFoundException
+    {
+        // 加锁，防止同一个名称的类加载冲突
+        synchronized (getClassLoadingLock(name)) {
+            // 查看是否已经加载过对应的class
+            Class<?> c = findLoadedClass(name);
+            if (c == null) {
+                long t0 = System.nanoTime();
+                try {
+                    // parent 表示父类加载器
+                    // 这里类似于递归，一步步向parent查找
+                    if (parent != null) {
+                        c = parent.loadClass(name, false);
+                    }
+                    
+                    // 当parent为null时，表示已经到最顶层的BootstrapClassLoader了
+                    else {
+                        c = findBootstrapClassOrNull(name);
+                    }
+                } catch (ClassNotFoundException e) {
+                    // ClassNotFoundException thrown if class not found
+                    // from the non-null parent class loader
+                }
+
+                // 最顶层的BootstrapClassLoader未找到则向下去查找class
+                if (c == null) {
+                    // If still not found, then invoke findClass in order
+                    // to find the class.
+                    long t1 = System.nanoTime();
+                    // children ClassLoader会实现findClass方法
+                    c = findClass(name);
+
+                    // this is the defining class loader; record the stats
+                    sun.misc.PerfCounter.getParentDelegationTime().addTime(t1 - t0);
+                    sun.misc.PerfCounter.getFindClassTime().addElapsedTimeFrom(t1);
+                    sun.misc.PerfCounter.getFindClasses().increment();
+                }
+            }
+            if (resolve) {
+                resolveClass(c);
+            }
+            return c;
+        }
+    }
+```
 
 
-### 自定义类加载器
+## 自定义类加载器
 实现ClassLoader的钩子函数findClass
 
-### LazyInitializing
+## LazyInitializing
 JVM规范中没有规定何时加载类，即按需加载
 但是严格规定了什么时候必须初始化：
 - new , get static, put static, invoke static指令，访问final修饰的变量除外
@@ -73,7 +161,7 @@ JVM规范中没有规定何时加载类，即按需加载
 - 虚拟机启动时，被执行的主类必须初始化
 - 动态语言支持java.lang.invoke.MethodHandle解析的结果为方法句柄时，该类必须初始化
 
-### 编译
+## 编译
 JVM中有三种编译模式
 - 混合模式：-Xmixed，默认为混合模式
   * 混合使用解释器 + 热点代码编译
@@ -88,7 +176,7 @@ JVM中有三种编译模式
 - 纯编译模式：-Xcomp:使用纯编译模式，执行很快，启动很慢
 
 
-### TLAB(Thread Local Allocation Buffer)
+## TLAB(Thread Local Allocation Buffer)
 线程本地分配缓存
 一个线程专用的内存分配区域，为了加速对象分配
 每一个线程，都会产生一个TLAB，该线程独享的工作区域
@@ -96,7 +184,7 @@ JVM中有三种编译模式
 TLAB用来避免多线程冲突问题，提高对象分配效率。
 TLAB缺省情况下仅占有整个Eden空间的1%，也可以通过选项-XX:TLABWasteTargetPercent设置TLAB空间所占用Eden空间的百分比大小。
 
-### 内存模型
+## 内存模型
 1. 程序计数器：指向当前程序正在执行的字节码指令的地址，每个线程都有独立的程序计数器。
 2. 虚拟机栈：
 3. 
