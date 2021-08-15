@@ -7,7 +7,7 @@ Java HotSpot(TM) 64-Bit Server VM (build 25.271-b09, mixed mode)
 ```
 HotSpot是JVM的一种实现。
 
-## [Class 文件结构](./clzz)
+## [Class 文件结构](./clazz)
 
 ## [类加载器 Class Loader](./class_loader)
 

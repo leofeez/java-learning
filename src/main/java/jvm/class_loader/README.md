@@ -2,20 +2,6 @@
 java虚拟机将描述类的数据从Class文件加载到内存，并对数据进行校验，转换、解析、初始化并最终形成可以被JVM
 可以直接执行的指令，这个过程就可以被称之为虚拟机的类加载机制。
 
-## 类加载的过程
- 
-Loading ->  Linking(verification -> preparation -> resolution) -> Initializing
-
-- Loading: 装载 class 文件到内存。
-  * 装载class文件的二进制到内存
-  * 生成class类的对象，指向内存的二进制内容，我们使用Class类对象时，会自动找到指向内存中的二进制码，然后执行jvm指令。
-    
-- preparation: class 静态变量赋默认值
-  
-- resolution:
-  
-- Initializing: 赋初始值，执行静态代码块
-
 ## 什么是类加载器？
 实现通过一个类的全限定名来获取描述该类的二进制流的动作的代码就叫做类加载器。
 类加载器主要分为以下几类：
@@ -49,6 +35,9 @@ JVM 是按需动态加载，采用的是双亲委派机制。                   
 - 更安全解决了各个类加载器的基础类的统一问题，如果不使用该种方式，那么用户可以随意定义类加载器来加载核心 API，会带来安全隐患。
 
 *注：父加载器不是类加载器的加载器，也不是类加载器的父类加载器。*
+
+如何打破双亲委派原则：
+
 
 ## Launcher
 Launcher是java程序的入口，Launcher的ClassLoader是BootstrapClassLoader，在Launcher创建的同时，还会创建`ExtClassLoader`，
@@ -174,6 +163,23 @@ JVM中有三种编译模式
 - 解释模式：-Xint: 使用解释执行模式，启动很快，执行稍慢
   
 - 纯编译模式：-Xcomp:使用纯编译模式，执行很快，启动很慢
+
+## 类加载的过程
+
+Loading ->  Linking(verification -> preparation -> resolution) -> Initializing
+
+- Loading: 装载 class 文件到内存。
+  * 装载class文件的二进制到内存
+  * 生成class类的对象，指向内存的二进制内容，我们使用Class类对象时，会自动找到指向内存中的二进制码，然后执行jvm指令。
+
+- verification: 验证文件是否符合JVM规范
+
+- preparation: class 静态变量赋默认值
+
+- resolution: 将类、方法、属性等符号引用解析为直接引用
+  constant pool 常量池中的各种符号引用解析为指针、偏移量等内存地址的直接引用
+
+- Initializing: 赋初始值，执行静态代码块
 
 
 ## TLAB(Thread Local Allocation Buffer)
