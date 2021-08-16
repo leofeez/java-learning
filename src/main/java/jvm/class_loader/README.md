@@ -181,6 +181,15 @@ Loading ->  Linking(verification -> preparation -> resolution) -> Initializing
 
 - Initializing: 赋初始值，执行静态代码块
 
+## 面试题：对象的创建过程
+1. class loading
+2. class linking (verification, preparation, resolution)
+3. class initializing
+4. 申请对象内存
+5. 成员变量赋默认值
+6. 调用构造方法<init>
+  - 成员比那里顺序赋初始值
+  - 执行构造方法语句
 
 ## TLAB(Thread Local Allocation Buffer)
 线程本地分配缓存
