@@ -27,8 +27,8 @@ CPU硬件级别的内存屏障，每种CPU的内存屏障的指令都是不一�
 
 以下汇编指令（基于Intel CPU）：
 - sfence: store fence，在 sfence 指令前的写操作必须在sfence指令后的写操作前完成。
-- lfence: load，在lfence指令前的读操作必须在lfence指令后的读操作前完成。
-- mfence: mix，在mfence指令前的读写操作必须在mfence指令后的读写操作前完成。
+- lfence: load fence，在lfence指令前的读操作必须在lfence指令后的读操作前完成。
+- mfence: mix fence，在mfence指令前的读写操作必须在mfence指令后的读写操作前完成。
 
 原子指令：如x86上的 lock... 指令是一个Full Barrier，执行时会锁住内存子系统来确保执行顺序，甚至会跨多个CPU。
 软件层面的通常是利用了内存屏障或者原子指令来实现变量的可见性和保持程序的执行顺序。
