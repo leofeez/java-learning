@@ -81,8 +81,30 @@ Premain-Class: object_agent.ObjectAgent
   可以通过-UseCompressedClassPointers关闭指针压缩。
 - -XX:+UseCompressedClassPointers: 表示开启普通对象的指针压缩，原始对象引用指针占用8个字节，开启压缩指针后占用4个字节，
   可以通过-UseCompressedClassPointers关闭指针压缩。
+  
+## Hotspot虚拟机开启内存压缩的规则
+1. 4G以下，直接砍掉高32位
+2. 4G~32G，默认开启内存压缩 compressClassPointer compressOops
+3. 32G，压缩无效，使用64位
+
+所以内存并不是越大越好
 
 ## 对象头markword具体包括什么
 
- 
+ 分为几种情况讨论：
+    - 无锁状态：
+    - 偏向锁状态：如果对象调用过 identityHashCode，则对象无法进入偏向锁状态
+    - 轻量级锁
+    - 重量级锁
+    - GC标记
+对象的hashcode按原始计算System.identityHashCode生成的JVM会将其记录在markword中，但是一旦重写了对象的hashcode方法，则对象的hashcode不会
+存储在markword中
+
+对象的GC年龄最大为15，因为在markword对象头中，GC年龄只用了4bit进行保存。
+
+## 对象如何定位
+> https://blog.csdn.net/clover_lily/article/details/80095580
+- 句柄池(gc 效率比较高)
+- 直接引用（hotspot）
+
 
