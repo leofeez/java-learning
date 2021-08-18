@@ -14,13 +14,13 @@
 
 1. 普通对象：
 
-- 对象头markword: 8个字节
+- 对象头MarkWord: 8个字节
 
-- Class pointer: 属于哪个class，-XX:+UseCompressedClassPointers 为4字节，否则为8字节。
+- ClassPointer: 属于哪个Class，-XX:+UseCompressedClassPointers 为4字节，否则为8字节。
 
 - 实例数据InstantData：
 
-    - 引用类型: -XX:+UseCompressOops 开启则占4字节，否则占8字节
+    - 引用类型: -XX:+UseCompressedOops 开启则占4字节，否则占8字节
 
 
 * 对齐填充Padding：保证对象的大小为8的整数倍。
@@ -29,8 +29,8 @@
 
 2. 数组对象:
 
-* markword: 8个字节
-* class pointer: 属于哪个class，-XX:+UseCompressedClassPointers 为4字节，否则为8字节。
+* MarkWord: 8个字节
+* ClassPointer: 属于哪个class，-XX:+UseCompressedClassPointers 为4字节，否则为8字节。
 * 数组长度: 4个字节
 * 数组数据
 * 对齐填充：保证对象的大小为8位的整数倍。
@@ -62,8 +62,10 @@ Java HotSpot(TM) 64-Bit Server VM (build 25.271-b09, mixed mode)
 
 在上面的输出信息有两个配置内容关系到一个对象的实际大小：
 
-- -XX:+UseCompressedClassPointers: 表示开启 class pointer 指针压缩，class pointer 原始占用8个字节，开启压缩指针后占用4个字节，可以通过-UseCompressedClassPointers关闭指针压缩。
-- -XX:+UseCompressedClassPointers: 表示开启普通对象的指针压缩，原始对象引用指针占用8个字节，开启压缩指针后占用4个字节，可以通过-UseCompressedClassPointers关闭指针压缩。
+- -XX:+UseCompressedClassPointers: 表示开启 class pointer 指针压缩，class pointer 原始占用8个字节，开启压缩指针后占用4个字节，
+  可以通过-UseCompressedClassPointers关闭指针压缩。
+- -XX:+UseCompressedOops: 表示开启普通对象的指针压缩，原始对象引用指针占用8个字节，开启压缩指针后占用4个字节，
+  可以通过-UseCompressedClassPointers关闭指针压缩。
 
 知道上述两个因素之后，就可以大致计算出一个对象的具体大小：
 
@@ -91,7 +93,8 @@ Java HotSpot(TM) 64-Bit Server VM (build 25.271-b09, mixed mode)
 
 ### 小技巧利用 Agent 计算对象的大小
 
-在ClassLoader中提到，一个Class文件通过ClassLoader load 到内存中的时候，我们可以通过在这个过程中增加一个 agent，通过 agent 可以获取到对象的大小，具体步骤如下：
+在ClassLoader中提到，一个Class文件通过ClassLoader load 到内存中的时候，我们可以通过在这个过程中增加一个 agent，
+通过 agent 可以获取到对象的大小，具体步骤如下：
 
 1. 新建一个 Module，添加ObjectAgent.java
 ```java
@@ -181,7 +184,7 @@ Premain-Class: object_agent.ObjectAgent
 
 所以内存并不是越大越好
 
-## 对象头markword具体包括什么
+## 对象头MarkWord具体包括什么
 
  分为几种情况讨论：
     - 无锁状态：
