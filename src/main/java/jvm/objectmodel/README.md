@@ -6,17 +6,49 @@
 5. 成员变量赋默认值
 6. 调用构造方法<init>
     - 成员比那里顺序赋初始值
-    - 执行构造方法语句
+    - 执行构造方法
 
 ## 对象在内存中的存储布局
 
+关于该问题需要拆分为两种情况分析：
+
+1. 普通对象：
+
+- 对象头markword: 8个字节
+
+- Class pointer: 属于哪个class，-XX:+UseCompressedClassPointers 为4字节，否则为8字节。
+
+- 实例数据InstantData：
+
+    - 引用类型: -XX:+UseCompressOops 开启则占4字节，否则占8字节
+
+
+* 对齐填充Padding：保证对象的大小为8的整数倍。
+
+
+
+2. 数组对象:
+
+* markword: 8个字节
+* class pointer: 属于哪个class，-XX:+UseCompressedClassPointers 为4字节，否则为8字节。
+* 数组长度: 4个字节
+* 数组数据
+* 对齐填充：保证对象的大小为8位的整数倍。
+
+整个对象的结构大致如下图：
+
+![ObjectModel](ObjectModel.png "ObjectModel")
+
 > https://www.jianshu.com/p/d42ac3ab41f7
 
-对象的大小和虚拟机的配置有关联
-```java
- java -XX:+PrintCommandLineFlags -version
+## 对象的大小
 
-输出如下:
+对象的实际大小其实和虚拟机的配置有关联，我们可以通过`java -XX:+PrintCommandLineFlags -version` 输出当前JVM的配置信息：
+
+```java
+java -XX:+PrintCommandLineFlags -version
+        
+以下是笔者安装的JVM, 输出如下:
      -XX:InitialHeapSize=268435456
      -XX:MaxHeapSize=4294967296
      -XX:+PrintCommandLineFlags
@@ -28,37 +60,51 @@ Java(TM) SE Runtime Environment (build 1.8.0_271-b09)
 Java HotSpot(TM) 64-Bit Server VM (build 25.271-b09, mixed mode)
 ```
 
-普通对象：
+在上面的输出信息有两个配置内容关系到一个对象的实际大小：
 
-- 对象头
-   * markword: 8个字节
-   * class pointer: 属于哪个class，-XX:+UseCompressedClassPointers 为4字节，否则为8字节。
-   * 实例数据：
-      - 引用类型: -XX:+UseCompressOops 为4字节，否则为8字节
-     
-   * 对齐填充：保证对象的大小为8的倍数
+- -XX:+UseCompressedClassPointers: 表示开启 class pointer 指针压缩，class pointer 原始占用8个字节，开启压缩指针后占用4个字节，可以通过-UseCompressedClassPointers关闭指针压缩。
+- -XX:+UseCompressedClassPointers: 表示开启普通对象的指针压缩，原始对象引用指针占用8个字节，开启压缩指针后占用4个字节，可以通过-UseCompressedClassPointers关闭指针压缩。
 
-数组对象:
-   * markword: 8个字节
-   * class pointer: 属于哪个class，-XX:+UseCompressedClassPointers 为4字节，否则为8字节。
-   * 数组长度: 4个字节
-   * 数组数据
-   * 对齐填充：保证对象的大小为8的倍数
+知道上述两个因素之后，就可以大致计算出一个对象的具体大小：
 
-## 对象的大小
-class 在 load 到内存中的时候可以在这个过程中增加一个 agent，通过 agent 可以获取到对象的大小；
+```java
+    /**
+     * -XX:+UserCompressedClassPointers 为24
+     * -XX:-UserCompressedClassPointers 为32
+     * -XX:-UserCompressedClassPointers -XX:-UseCompressedOops 为 40
+     */
+    public static class P {
+        // mark word 8 字节
+        // class pointer 压缩为4字节，不压缩为8字节
 
-可以利用 ObjectAgent来查询出对象的大小
+        // int 类型为 4 个字节
+        int a;
+        int b;
+        int c;
+
+        // String 为引用类型，开启oops压缩占4个字节，正常占8个字节
+        String s = "s";
+
+        // padding 对其填充为 8 字节倍数
+    }
+```
+
+### 小技巧利用 Agent 计算对象的大小
+
+在ClassLoader中提到，一个Class文件通过ClassLoader load 到内存中的时候，我们可以通过在这个过程中增加一个 agent，通过 agent 可以获取到对象的大小，具体步骤如下：
+
 1. 新建一个 Module，添加ObjectAgent.java
 ```java
     public class ObjectAgent {
     
         static Instrumentation inst;
-    
+    		
+      	// 该方法签名是固定的，就和main方法类似
         public static void premain(String args, Instrumentation _inst) {
             inst = _inst;
         }
     
+      	// 计算对象的大小
         public static long sizeof(Object o) {
             return inst.getObjectSize(o);
         }
@@ -71,17 +117,63 @@ Premain-Class: object_agent.ObjectAgent
 
 ```
 3. 将该module打成jar包，添加到需要使用的module的library中
+
 4. 添加启动VM参数：-javaagent:${ObjectAgent.jar的路径}
+
 5. 调用ObjectAgent.sizeof(o);
 
-*以下内容基于64位OS*
+   ```java
+   public class ObjectSize {
+   
+       public static void main(String[] args) {
+           Object o = new Object();
+           System.out.println("new Object() 对象大小为：" + ObjectAgent.sizeof(o));
+   
+           // -XX:+UserCompressedClassPointers 为16
+           // -XX:-UserCompressedClassPointers 为24
+           T t = new T();
+           System.out.println("new T() 对象大小为：" + ObjectAgent.sizeof(t));
+   
+           // -XX:+UserCompressedClassPointers 为24
+           // -XX:-UserCompressedClassPointers 为32
+           // -XX:-UserCompressedClassPointers -XX:-UseCompressedOops 为 40
+           P p = new P();
+           System.out.println("new P() 对象大小为：" + ObjectAgent.sizeof(p));
+       }
+   
+       public static class T {
+           // mark word 8 字节
+           // class pointer 压缩为4字节，不压缩为8字节
+   
+           // int 类型为 4 个字节
+           int a;
+   
+           // padding 对其填充为 8 字节倍数
+       }
+   
+       /**
+        * -XX:+UserCompressedClassPointers 为24
+        * -XX:-UserCompressedClassPointers 为32
+        * -XX:-UserCompressedClassPointers -XX:-UseCompressedOops 为 40
+        */
+       public static class P {
+           // mark word 8 字节
+           // class pointer 压缩为4字节，不压缩为8字节
+   
+           // int 类型为 4 个字节
+           int a;
+           int b;
+           int c;
+   
+           // String 为引用类型，开启oops压缩占4个字节，正常占8个字节
+           String s = "s";
+   
+           // padding 对其填充为 8 字节倍数
+       }
+   ```
 
-要想知道一个对象具体占用多少个字节，首先得知道JVM以下两个参数值：
-- -XX:+UseCompressedClassPointers: 表示开启 class pointer 指针压缩，class pointer 原始占用8个字节，开启压缩指针后占用4个字节，
-  可以通过-UseCompressedClassPointers关闭指针压缩。
-- -XX:+UseCompressedClassPointers: 表示开启普通对象的指针压缩，原始对象引用指针占用8个字节，开启压缩指针后占用4个字节，
-  可以通过-UseCompressedClassPointers关闭指针压缩。
-  
+   
+
 ## Hotspot虚拟机开启内存压缩的规则
 1. 4G以下，直接砍掉高32位
 2. 4G~32G，默认开启内存压缩 compressClassPointer compressOops
@@ -106,5 +198,4 @@ Premain-Class: object_agent.ObjectAgent
 > https://blog.csdn.net/clover_lily/article/details/80095580
 - 句柄池(gc 效率比较高)
 - 直接引用（hotspot）
-
 

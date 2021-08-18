@@ -10,7 +10,14 @@ public class ObjectAgent {
 
     static Instrumentation inst;
 
-    public static void premain(String args, Instrumentation _inst) {
+    /**
+     * 该方法签名是固定的，就和main方法类似
+     *
+     * @param agentArgs
+     * @param _inst
+     */
+
+    public static void premain(String agentArgs, Instrumentation _inst) {
         inst = _inst;
     }
 
