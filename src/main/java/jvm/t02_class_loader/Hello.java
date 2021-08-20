@@ -1,4 +1,4 @@
-package jvm.class_loader;
+package jvm.t02_class_loader;
 
 /**
  * @author leofee

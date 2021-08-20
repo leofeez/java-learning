@@ -1,4 +1,4 @@
-package jvm.class_loader;
+package jvm.t02_class_loader;
 
 import java.io.*;
 import java.util.*;
@@ -62,7 +62,7 @@ public class MyClassLoader extends ClassLoader {
     public static void main(String[] args) throws ClassNotFoundException, IllegalAccessException, InstantiationException {
         MyClassLoader classLoader = new MyClassLoader();
 
-        Class<?> hello = classLoader.loadClass("jvm.class_loader.Hello");
+        Class<?> hello = classLoader.loadClass("jvm.t02_class_loader.Hello");
 
         Hello instance = (Hello) hello.newInstance();
         instance.sayHello();

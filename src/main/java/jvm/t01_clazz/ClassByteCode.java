@@ -1,4 +1,4 @@
-package jvm.clazz;
+package jvm.t01_clazz;
 
 /**
  * @author leofee

@@ -1,4 +1,4 @@
-package jvm.class_loader;
+package jvm.t02_class_loader;
 
 import sun.net.spi.nameservice.dns.DNSNameService;
 

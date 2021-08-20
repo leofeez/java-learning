@@ -1,4 +1,4 @@
-package jvm.dataarea;
+package jvm.t04_dataarea;
 
 /**
  * @author leofee

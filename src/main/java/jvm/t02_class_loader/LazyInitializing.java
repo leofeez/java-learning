@@ -1,4 +1,4 @@
-package jvm.class_loader;
+package jvm.t02_class_loader;
 
 /**
  * @author leofee
@@ -17,7 +17,7 @@ public class LazyInitializing {
         // 子类初始化，必须先初始化父类
         System.out.println(new X());
 
-        Class.forName("jvm.class_loader.LazyInitializing$P");
+        Class.forName("jvm.t02_class_loader.LazyInitializing$P");
     }
 
     static class P {

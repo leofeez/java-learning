@@ -1,4 +1,4 @@
-package jvm.objectmodel;
+package jvm.t03_objectmodel;
 
 import java.lang.instrument.Instrumentation;
 

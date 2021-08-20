@@ -1,4 +1,4 @@
-package jvm.class_loader;
+package jvm.t02_class_loader;
 
 import java.io.InputStream;
 
@@ -9,7 +9,7 @@ import java.io.InputStream;
 public class ClassLoader02 {
 
     public static void main(String[] args) throws ClassNotFoundException {
-        Class<?> clazz = ClassLoader02.class.getClassLoader().loadClass("jvm.class_loader.Launcher01");
+        Class<?> clazz = ClassLoader02.class.getClassLoader().loadClass("jvm.t02_class_loader.Launcher01");
         System.out.println(clazz.getName());
 
         InputStream resourceAsStream = ClassLoader02.class.getClassLoader().getResourceAsStream("ObjectModel.pbg");

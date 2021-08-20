@@ -190,16 +190,3 @@ Loading ->  Linking(verification -> preparation -> resolution) -> Initializing
 6. 调用构造方法<init>
   - 成员比那里顺序赋初始值
   - 执行构造方法语句
-
-## TLAB(Thread Local Allocation Buffer)
-线程本地分配缓存
-一个线程专用的内存分配区域，为了加速对象分配
-每一个线程，都会产生一个TLAB，该线程独享的工作区域
-每一个线程，都会默认使用TLAB区域
-TLAB用来避免多线程冲突问题，提高对象分配效率。
-TLAB缺省情况下仅占有整个Eden空间的1%，也可以通过选项-XX:TLABWasteTargetPercent设置TLAB空间所占用Eden空间的百分比大小。
-
-## 内存模型
-1. 程序计数器：指向当前程序正在执行的字节码指令的地址，每个线程都有独立的程序计数器。
-2. 虚拟机栈：
-3. 

@@ -1,5 +1,5 @@
 ## 对象的创建过程
-1. [class loading](../class_loader)
+1. [class loading](../t02_class_loader)
 2. class linking (verification, preparation, resolution)
 3. class initializing
 4. 申请对象内存
