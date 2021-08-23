@@ -15,7 +15,7 @@
 
 ## 垃圾回收算法
 - Mark sweep: 标记清除，容易内存碎片化
-- Copying: 拷贝，将内存分为两份，当需要垃圾回收时，先将有效内存数据copy到另外一份，并且连续，然后将第一部门的内存整个回收 ，
+- Copying: 拷贝，将内存分为两份，当需要垃圾回收时，先将有效内存数据copy到另外一份，并且连续，然后将第一部分的内存整个回收 ，
   此算法存在内存浪费的情况，但是效率高，适合用于存活对象比较少的情况。
 - Mark compact: 标记压缩， 在标记的同时对碎片内存进行压缩，即需要移动对象，这样可以减少碎片并且没有内存浪费，但是效率偏低。
 
@@ -35,13 +35,13 @@
                           1                                                     2
 ```
 
-1. 新生代 young
+1. 新生代 young = Eden + s0 + s1
 2. 老年代 old
 3. 1.7的时候还有PermGen 永久代/ 1.8 叫元数据区MetaSpace
     1.7PermGen永久代和1.8中的MetaSpace有什么区别？
-    - 永久代和元数据区都是存放Class对象
-    - 永久代必须制定大小限制，元数据区可以设置大小，无上限（受限于物理内存大小）
-    - 字符串常量1.7存放在永久代，1.8存放在堆中
+    - 永久代和元数据区都是存放Class对象，Class字节码，包括动态生成的Class
+    - 1.7的时候永久代必须指定大小限制，1.8中的元数据区可以设置大小，无上限（受限于物理内存大小）
+    - 字符串常量1.7存放在MethodArea方法区/PermGen，1.8存放在堆中
     - MethodArea逻辑上的概念，1.7 就是永久代，1.8就是MetaSpace
 
 ## TLAB(Thread Local Allocation Buffer)
@@ -103,7 +103,7 @@ YoungGC大多数对象都会被GC，所以在新生代采用Copying算法去清�
 以上的垃圾回收器都是基于分代模型。
 
 穿插运用的垃圾回收器有：
-- G1
+- G1：逻辑分代，物理不分代
 - ZGC
 - Shenandoah
 - Epsilon
@@ -215,3 +215,91 @@ JVM参数分类：
 -XX:+PrintCommandLineFlag
 -XX:+PrintFlagsFinal
 -XX:+PrintFlagsInitial
+
+## 常见垃圾回收器组合参数设置
+
+- `-XX:+UseSerialGC`: Serial New + Serial Old，适合用于比较小的程序，但并不是默认就是这种选项，Hotspot会根据具体的配置和JDK的版本自动
+选择收集器。
+
+- `-XX:+UseParNewGC`：ParNew + Serial Old，这种组合很少用（某些版本已经弃用）
+- `-XX:+UseConcMarkSweepGC`： ParNew + CMS + Serial Old 
+- `-XX:+UseParallelGC`：Parallel Scavenge + Parallel Old， JDK 1.8 默认。
+- `-XX:+UseParallelOldGC`：Parallel Scavenge + Parallel Old
+- `-XX:+UseG1GC`: 使用G1
+
+## GC 日志分析
+```java
+public class HelloGC {
+
+    public static void main(String[] args) {
+        System.out.println("Hello GC");
+        List<byte[]> list = new LinkedList<>();
+
+        for(;;) {
+            byte[] b = new byte[1024 * 1024];
+            list.add(b);
+        }
+    }
+}
+```
+通过以下命令执行 T01:
+```
+java -XX:+PrintCommandLineFlags     // 打印命令行参数
+     -XX:+PrintGCDetails            // 打印GC详细日志
+     -Xmx20m -Xms20m                // 最大堆20M 最小堆20M
+     HelloGC                        // 编译完的class
+```
+
+控制台输出：
+
+```
+leofeeMacBook-Pro:java-learning leofee$ java -XX:+PrintCommandLineFlags -XX:+UseParallelGC -XX:+PrintGCDetails -Xmx20m -Xms20m jvm.t05_gc.T01_HelloGC
+-XX:InitialHeapSize=20971520 -XX:MaxHeapSize=20971520 -XX:+PrintCommandLineFlags -XX:+PrintGCDetails -XX:+UseCompressedClassPointers -XX:+UseCompressedOops -XX:+UseParallelGC 
+Hello GC
+
+
+[GC (Allocation Failure) [PSYoungGen: 4780K->416K(6144K)] 4780K->4520K(19968K), 0.0017916 secs] [Times: user=0.00 sys=0.01, real=0.01 secs] 
+[GC (Allocation Failure) [PSYoungGen: 5646K->352K(6144K)] 9750K->9576K(19968K), 0.0020060 secs] [Times: user=0.00 sys=0.00, real=0.00 secs] 
+[Full GC (Ergonomics) [PSYoungGen: 352K->0K(6144K)] [ParOldGen: 9224K->9493K(13824K)] 9576K->9493K(19968K), [Metaspace: 2675K->2675K(1056768K)], 0.0034673 secs] [Times: user=0.01 sys=0.00, real=0.00 secs] 
+[Full GC (Ergonomics) [PSYoungGen: 5335K->1024K(6144K)] [ParOldGen: 9493K->13589K(13824K)] 14828K->14613K(19968K), [Metaspace: 2676K->2676K(1056768K)], 0.0032675 secs] [Times: user=0.01 sys=0.00, real=0.01 secs] 
+[Full GC (Ergonomics) [PSYoungGen: 5217K->5120K(6144K)] [ParOldGen: 13589K->13589K(13824K)] 18806K->18709K(19968K), [Metaspace: 2676K->2676K(1056768K)], 0.0039851 secs] [Times: user=0.01 sys=0.00, real=0.00 secs] 
+[Full GC (Allocation Failure) [PSYoungGen: 5120K->5120K(6144K)] [ParOldGen: 13589K->13577K(13824K)] 18709K->18697K(19968K), [Metaspace: 2676K->2676K(1056768K)], 0.0030686 secs] [Times: user=0.00 sys=0.00, real=0.00 secs] 
+
+Exception in thread "main" java.lang.OutOfMemoryError: Java heap space
+	at jvm.t05_gc.T01_HelloGC.main(T01_HelloGC.java:17)
+	
+Heap
+ PSYoungGen      total 6144K, used 5327K [0x00000007bf980000, 0x00000007c0000000, 0x00000007c0000000)
+  eden space 5632K, 94% used [0x00000007bf980000,0x00000007bfeb3c58,0x00000007bff00000)
+  from space 512K, 0% used [0x00000007bff80000,0x00000007bff80000,0x00000007c0000000)
+  to   space 512K, 0% used [0x00000007bff00000,0x00000007bff00000,0x00000007bff80000)
+ ParOldGen       total 13824K, used 13577K [0x00000007bec00000, 0x00000007bf980000, 0x00000007bf980000)
+  object space 13824K, 98% used [0x00000007bec00000,0x00000007bf942678,0x00000007bf980000)
+ Metaspace       used 2707K, capacity 4486K, committed 4864K, reserved 1056768K
+  class space    used 291K, capacity 386K, committed 512K, reserved 1048576K
+
+```
+
+从上述日志分析日志格式如下：
+```
+                                        回收前          年轻代
+   YoungGC    GC发生的原因      年代     年轻代大小       总大小       回收后堆占用                              
+   /            /             /          /             /             /                                      
+  /            /             /          /             /             /                                               
+[GC (Allocation Failure) [PSYoungGen: 4780K->416K(6144K)] 4780K->4520K(19968K), 0.0017916 secs] [Times: user=0.00 sys=0.01, real=0.01 secs]
+                                               \            \             \                                         /
+                                                \            \             \                                       /
+                                               回收后        回收前         总堆空间                              内核态消耗时间
+                                              年轻代空间     堆占用
+                                              
+
+                                    回收前          年轻代
+   Full GC    GC发生的原因  年代     老年代大小       总大小        回收后堆占用         元数据区                   
+   /            /         /          /             /               /                /
+  /            /         /          /             /               /                /
+[Full GC (Ergonomics) [ParOldGen: 9224K->9493K(13824K)] 9576K->9493K(19968K), [Metaspace: 2675K->2675K(1056768K)], 0.0034673 secs] [Times: user=0.01 sys=0.00, real=0.00 secs]
+                                             \            \             \
+                                              \            \             \
+                                             回收后        回收前         总堆空间
+                                            年轻代空间     堆占用
+```
