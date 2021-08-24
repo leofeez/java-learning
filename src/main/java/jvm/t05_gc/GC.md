@@ -361,3 +361,55 @@ Heap
                                              回收后        回收前         总堆空间
                                             年轻代空间     堆占用
 ```
+
+堆占用情况如下：                                            
+
+```                                                 
+                                        年轻代总大小
+                                 (Eden + 一个survivor区)      内存起始空间地址       内存占用地址             内存空间结束地址
+                                          /                      /                   /                      /
+                Heap                     /                      /                   /                      /
+                PSYoungGen      total 6144K, used 5327K [0x00000007bf980000, 0x00000007c0000000, 0x00000007c0000000)
+  Eden    --        eden space 5632K, 94% used [0x00000007bf980000,0x00000007bfeb3c58,0x00000007bff00000)
+survivor0 --        from space 512K, 0% used [0x00000007bff80000,0x00000007bff80000,0x00000007c0000000)
+survivor1 --        to   space 512K, 0% used [0x00000007bff00000,0x00000007bff00000,0x00000007bff80000)
+
+                ParOldGen       total 13824K, used 13577K [0x00000007bec00000, 0x00000007bf980000, 0x00000007bf980000)
+                    object space 13824K, 98% used [0x00000007bec00000,0x00000007bf942678,0x00000007bf980000)
+                    Metaspace       used 2707K, capacity 4486K, committed 4864K, reserved 1056768K
+                    class space    used 291K, capacity 386K, committed 512K, reserved 1048576K
+```
+
+## 调优前的基础概念
+1. 吞吐量：用户代码时间/(用户代码时间 + 垃圾回收时间)
+2. 响应时间： STW 时间越短，响应时间越好 
+   
+在不同场景下有不同的调优方向：
+- 科学计算的吞吐量优先
+- 网站以及API接口相应时间优先
+
+什么是调优
+- 根据需求进行JVM的规划和预调优
+- 优化JVM运行环境
+- 解决JVM运行中出现的各种问题，比如OOM
+
+调优，从规划开始，以下大致的调优步骤：
+1. 熟悉业务场景
+   - 响应时间，停顿时间(CMS G1 ZGC)
+   - 吞吐量，PS
+2. 选择垃圾回收器的组合
+3. 计算内存需求
+4. 选定CPU
+5. 设定年代大小，升级年龄阈值
+6. 设定日志参数
+    - -Xloggc:/opt/xxx/logs/xxxx-xxx-gc-%t.log 
+        -XX:+UseGCLogFileRotation
+        -XX:NumberOfGCLogFiles=5
+        -XX:GCLogFileSize=20M
+        -XX:+PrintGCDetails
+        -XX:+PrintGCDateStamps
+        -XX:+PrintGCCause
+    - 或者每天产生一个日志文件
+7. 观察日志情况
+
+
