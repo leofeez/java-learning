@@ -1,7 +1,10 @@
 package thread.thread_pool;
 
+import jvm.t05_gc.T02_HelloGC;
+
 import java.io.IOException;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author leofee
@@ -79,5 +82,22 @@ public class T06_MyThreadPoolExecutor {
                 System.out.println("线程池关闭");
             }
         };
+    }
+
+    public static class MyThreadFactory implements ThreadFactory {
+
+        static final T02_HelloGC.MyThreadFactory INSTANCE = new T02_HelloGC.MyThreadFactory();
+
+
+        public static final AtomicInteger atomicInteger = new AtomicInteger();
+
+        @Override
+        public Thread newThread(Runnable r) {
+            Thread thread = new Thread(r, "leofee_thread-" + atomicInteger.getAndIncrement());
+            thread.setUncaughtExceptionHandler((t, e) -> {
+                System.out.println(t.getName() + "发生了错误" + e);
+            });
+            return thread;
+        }
     }
 }
