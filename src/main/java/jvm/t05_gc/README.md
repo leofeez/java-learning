@@ -173,11 +173,11 @@ YoungGC大多数对象都会被GC，所以在新生代采用Copying算法去清�
 
 并发垃圾回收时无法忍受STW，所以CMS的出现是为了减少STW的响应时间。但是如果硬件内存很大，使用CMS会产生以下缺点：
 #### CMS 的缺点
-- 内存碎片化：由于采用 标记清除算法，必然会产生碎片化。
+- 内存碎片化：由于采用 Mark-Sweep标记清除算法，必然会产生碎片化。
 - 浮动垃圾：在CMS的并发清理过程，由于有用户线程正在运行，所以此处同时会产生新的垃圾，称为浮动垃圾。
 
 基于以上两个缺点，当产生大量碎片和浮动垃圾之后，在Eden区或者survivor区对象升级到老年代时，发现没有足够连续的内存
-可用，就会导致CMS启动Serial Old 进行标记压缩清除垃圾，当硬件内存很大的时候，这个过程会消耗大量时间。
+可用，就会导致CMS启动Serial Old 进行Mark-Compact-Sweep标记压缩清除垃圾，当硬件内存很大的时候，这个过程会消耗大量时间。
 
 解决办法：
 - -XX:CMSFullGCsBeforeCompaction
@@ -187,6 +187,11 @@ YoungGC大多数对象都会被GC，所以在新生代采用Copying算法去清�
 有一个50万PV的资料类网站（从磁盘提取文档到内存）原服务器32位，1.5G 的堆，用户反馈网站比较缓慢，因此公司决定升级，新的服务器为64位，
 16G 的堆内存，结果用户反馈卡顿十分严重，反而比以前效率更低了。
 
+### G1 - Garbage First Collector
+与其他垃圾回收器的很大的区别在于G1 只是在逻辑分代，而物理上不分代，在G1中，堆被分为很多个大小相同的区域(Region)，每个区域有可能是Old老年代，也有可能是Eden新生代，Survivor。
+
+> https://www.cnblogs.com/webor2006/p/11123522.html
+
 #### 垃圾收集器和内存大小的关系
 1. Serial 几十M
 2. PS 上百M ~ 几个G
@@ -195,8 +200,43 @@ YoungGC大多数对象都会被GC，所以在新生代采用Copying算法去清�
 5. ZGC 4T
 
 #### GC 的三色标记算法
+GC进行垃圾回收前需要对垃圾对象进行标记，具体采用的根可达算法(root searching)，在GC线程中对所有存活对象进行标记的过程中，会给对象标记上三种颜色，
+分别为黑，白，灰。
+
+- 黑色：表明对象已经被扫描到，并且自己引用的对象都已经被扫描过。
+- 白色：表明对象从未被扫描到。
+- 灰色：表明对象自身被扫描到，但是自己引用的对象还未被扫描过。
+
+当标记结束时，那些白色的对象就会被GC认为是垃圾对象，进行回收。
+
+##### 三色标记的漏标
+三色标记算法还存在一种漏标的情况：即当灰色对象对某一个白色对象的引用断开，这时候，一个黑色对象重新又增加了对前面白色对象的引用，这时GC线程标记的时候
+发现黑色对象已经被扫描过，所以不会重新再进行扫描，这样就会导致这个白色对象明明是有引用指向，但是却被GC回收了，导致了程序的运行错误。 伪代码如下：
+```java
+BlackObj blackObj = new BlackObj();
+GrayObj grayObj = new GrayObj();
+WhiteObj whiteObj = new WhiteObj();
+
+// 初始情况
+blackObj.whiteObj = null;
+grayObj.whiteObj = whiteObj;
+
+// 程序运行中
+// 灰色对象引用的白色对象断开
+grayObj.whiteObj = null;
+// 黑色对象增加对白色对象的引用
+black.whiteObj = whiteObj;
+
+// GC 漏标，回收了whiteObj
+```
+
+解决漏标的方式：
+- Incremental Update：增量更新，当对象持有的引用增加时，会将对象重新标记为灰色，CMS垃圾回收器使用的方案。
+- SATB(Snapshot At The Beginning)：
+- 写屏障：
+
 CMS: 三色标记算法 + Incremental Update
-G1(10ms): 三色标记算法 + SATB
+G1(10ms): 三色标记算法 + SATB(Snapshot At The Beginning) 
 ZGC(1ms): ColoredPointers + 写屏障
 Shenandoah: ColoredPointers + 读屏障
 
