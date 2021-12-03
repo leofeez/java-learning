@@ -2,7 +2,8 @@
 
 ## Runtime Data Area 运行时数据区
 - JVM stacks：每个线程独享
-- frame：栈帧，每一个方法对应一个栈帧，线程独享，存储了以下内容：
+- 栈帧【stack frame】：是用于帮助虚拟机执行方法调用与方法执行的数据结构。
+  每一个方法对应一个栈帧，线程独享，存储了以下内容：
   * Local Variables Table，局部变量表，hotspot的LocalVariables类似于寄存器
   * Operand Stack：操作数栈
   * Dynamic Linking：动态链接，比如在A() 方法中调用了B()，这时候需要去查找B()的符号链接。
@@ -26,6 +27,14 @@
 - Direct memory
   直接内存，JVM可以直接访问内核空间的内存，这个内存归操作系统管理，如网络IO，提高效率，实现0拷贝
 - Heap：堆，线程共享
+
+关于虚拟机栈，首先得明白栈的数据结构是先进后出(FILO)。
+
+- invokeinterface：调用接口中的方法，实际上是在运行期决定的，决定到底调用实现该接口的哪个对象的方法。
+- invokestatic：调用静态方法。【重要】
+- invokespectial：调用自己的私有方法、构造方法(<int>)以及父类的方法。
+- invokevirtual：调用虚方法，在c++中是存在虚方法这个概念的，但是Java是不存在的，但是在字节码中是存在有虚方法的，运行期动态查找的过程。【重要】
+- invokedynamic：动态调用方法。这是五个调用中最为复杂的，但是它是在JDK1.7之后才引用的，本身Java是一门静态的语言，但是通过一些引擎可以调用Javascript，这里了解一下既可。
 
 1. 情况一
 ```java
