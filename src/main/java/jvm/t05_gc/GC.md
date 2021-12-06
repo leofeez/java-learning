@@ -50,7 +50,7 @@
 每一个线程，都会产生一个TLAB，该线程独享的工作区域
 每一个线程，都会默认使用TLAB区域
 TLAB用来避免多线程冲突问题，提高对象分配效率。
-TLAB缺省情况下仅占有整个Eden空间的1%，也可以通过选项-XX:TLABWasteTargetPercent设置TLAB空间所占用Eden空间的百分比大小。
+TLAB缺省情况下仅占有整个Eden空间的1%，也可以通过选项`-XX:TLABWasteTargetPercent`设置TLAB空间所占用Eden空间的百分比大小。
     
 ### 对象内存分配的过程
 对于小对象：
@@ -61,7 +61,7 @@ TLAB缺省情况下仅占有整个Eden空间的1%，也可以通过选项-XX:TLA
     - 支持标量替换
     - 栈上使用直接弹出pop，也不需要垃圾回收器处理
     
-3. 如果栈上分配不下，则尝试在线程本地缓存中分配空间（其实也是Eden区）
+3. 如果栈上分配不下，则尝试在线程本地缓存TLAB中分配空间（其实也是Eden区）
     - 多线程的时候不需要竞争Eden区就可以申请空间，提高效率
     
 4. 线程本地缓存分配不下，则直接进入线程共享的Eden区
@@ -76,11 +76,20 @@ YoungGC大多数对象都会被GC，所以在新生代采用Copying算法去清�
 当遇到以下情况，则进入老年代。
 
 #### 对象何时会进入老年代
-- 超过`XX:MaxTenuringThreshold`指定的次数（YGC次数， 最大为15，因为对象头MarkWord中对象年龄占4位。
+- 超过`-XX:MaxTenuringThreshold`指定的次数（YGC次数， 最大为15，因为对象头MarkWord中对象年龄占4位。
     * Parallel Scavenge 默认为15
     * CMS 默认为 6
     * G1 默认为 15
-- 动态年龄：s1 + Eden存活对象 copy s2 中，如果超过s2的50% 则将年龄最大的进入老年代区域。
+- 动态年龄：
+在HotSpot虚拟机中，并不是严格的要求对象的年龄必须达到MaxTenuringThreshold才进行晋升到老年代，因为如果严格按照此规则会产生如下问题：
+  - 如果MaxTenuringThreshold设置的过大，如果新生代大量对象都没有达到这个阈值，就会导致对象不能及时的晋升到老年代，从而导致新生代晋升的机制
+    没有效果。
+  - 如果MaxTenuringThreshold设置的过小，就会导致新生代对象晋升过早，从而快速的撑满老年代的空间，从而频繁引发Major GC，影响效率。
+    
+所以Hotspot虚拟机，为了能够适应不同程序的内存状况，使用了动态年龄机制，具体变现为：
+s1 + Eden存活对象 copy到 s2 中，如果超过s2的50% 则将年龄最大的进入老年代区域，这时候的MaxTenuringThreshold就会被设置为此次晋升的年龄大小，
+其中50%这个阈值可以通过`-XX:TargetSurvivorRation`进行设定。
+
 
 
 老年代空间满了之后会触发一次FullGC或者叫MajorGC，这种GC会产生 Stop The World现象。
