@@ -452,6 +452,8 @@ survivor1 --        to   space 512K, 0% used [0x00000007bff00000,0x00000007bff00
 ```
 4. 利用`jstack <pid> > <pid>.tdump`导出线程栈的信息，栈信息文件通常以`.tdump`结尾
 5. 利用`jmap`导出堆信息，通过 `jmap -histo <pid> | head -20` 也可以分析堆中实例的数量及占用堆空间的大小。
+这里需要注意的是，jmap 导出堆转储文件会影响服务器的性能，所以一般情况下是不允许直接dump的，也可以在JVM启动时加入如下参数，在发生OOM的时候
+   自动生成堆转储文件`-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp`
 ```txt 
 [root@VM-16-16-centos ~]# jmap -histo 1075022 | head -20
 
@@ -475,6 +477,9 @@ survivor1 --        to   space 512K, 0% used [0x00000007bff00000,0x00000007bff00
   16:           276           8832  java.util.concurrent.ConcurrentHashMap$Node
   17:           180           7200  java.lang.ref.SoftReference
 ```
-导出堆文件 `jmap -dump:format=b,live,file=<pid>.hprof <pid> `，导出完成之后可以下载到本地机器，然后利用jvisualvm进行分析
+导出堆文件 `jmap -dump:format=b,live,file=<pid>.hprof <pid> `，导出完成之后可以下载到本地机器.
+6. 利用jvisualvm进行分析
 - jvisualvm为jdk的bin下，利用该命令即可启用
 - 装入下载下来的堆转储文件
+7. 利用jhat进行分析
+这里需要注意的是有时候导出的堆转储文件很大，如果直接使用jhat命令会报堆空间不足的错误，所以可以利用`jhat -J-mx512m <dump_file>进行分析
