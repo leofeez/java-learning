@@ -21,7 +21,7 @@
 
 ## JVM 分代内存模型（用于分代垃圾回收算法）
 这里需要注意的是并不是所有的垃圾回收器都是采用的分代模型，比如Epsilon， ZGC， Shenandoah。
-但目前大多数的还是依旧采用的分代木星，所以以下内容都是基于分代模型进行讨论：
+但目前大多数的还是依旧采用的分代模型，所以以下内容都是基于分代模型进行讨论：
 ```
                                 /—— Copying                                          /—— Mark Compact
                                /                                                    /
@@ -69,6 +69,7 @@ TLAB缺省情况下仅占有整个Eden空间的1%，也可以通过选项`-XX:TL
 对于大对象：则直接进入老年代。
 
 ### GC 的过程分析
+对于采用分代回收的垃圾回收器来说：
 YoungGC大多数对象都会被GC，所以在新生代采用Copying算法去清除。
 第一次YGC之后活着的对象都会进入survivor0。
 第二次YGC的时候，将存活的Eden + s0 的对象全部copy到survivor1中，这时候直接清除Eden和survivor0中的内存。
@@ -257,10 +258,17 @@ black.whiteObj = whiteObj;
 // GC 漏标，回收了whiteObj
 ```
 
-解决漏标的方式：
-- Incremental Update：增量更新，当对象持有的引用增加时，会将对象重新标记为灰色，CMS垃圾回收器使用的方案。
-- SATB(Snapshot At The Beginning)：
+从以上情况可以分析得出，产生漏标必须同时满足以下两个条件：
+- 灰色对象断开了对白色对象的引用
+- 黑色对象重新引用了断开的白色对象的引用
+
+所以解决漏标的方式就要从以上两个条件下手，只需要打破其中一条规则即可解决漏标的问题。
+而关于以上两个过程，其实可以在其中的某一个过程中添加一个类似于AOP拦截器， 在断开对象或者重新引用对象的时候进行拦截，这种拦截又称为写屏障和读屏障：
+
 - 写屏障：
+  * Incremental Update：增量更新，当对象持有的引用增加时，会将对象重新标记为灰色，CMS垃圾回收器使用的方案，所以在黑色对象重新增加对白色对象
+    的引用的时候，会增加当前对象的引用数量，从而将当前黑色对象重新标记为灰色。
+  * SATB(Snapshot At The Beginning)：增量更新，当对象持有的引用增加时，会将对象重新标记为灰色，CMS垃圾回收器使用的方案。
 
 CMS: 三色标记算法 + Incremental Update
 G1(10ms): 三色标记算法 + SATB(Snapshot At The Beginning) 
@@ -421,4 +429,52 @@ survivor1 --        to   space 512K, 0% used [0x00000007bff00000,0x00000007bff00
     - 或者每天产生一个日志文件
 7. 观察日志情况
 
+## 线上出现CPU飙升如何解决
 
+1. `top` 命令查看是哪个进程占用CPU高或者直接使用`jps`查看java相关进程
+2. `top -Hp <pid>` 查看进程中哪个线程占用CPU高，然后将线程ID转换为16进制数，因为在JVM中，堆栈的ID都是以16进制显示的，这里可以利用chrome
+   浏览器的控制台转换。
+3. `jstack <pid> | grep <nid> -A 20`，利用`jstack`查看线程中的堆栈信息，并匹配步骤2中转换的线程ID对应的16进制（grep -A 20 表示查找到之后显示）
+后续的20行。
+```text
+"pool-1-thread-50" #57 prio=5 os_prio=0 tid=0x00007f883c206800 nid=0x10678b waiting on condition [0x00007f87f5bda000]
+   java.lang.Thread.State: WAITING (parking)
+	at sun.misc.Unsafe.park(Native Method)
+	- parking to wait for  <0x00000000ffe66b60> (a java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject)
+	at java.util.concurrent.locks.LockSupport.park(LockSupport.java:175)
+	at java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:2039)
+	at java.util.concurrent.ScheduledThreadPoolExecutor$DelayedWorkQueue.take(ScheduledThreadPoolExecutor.java:1088)
+	at java.util.concurrent.ScheduledThreadPoolExecutor$DelayedWorkQueue.take(ScheduledThreadPoolExecutor.java:809)
+	at java.util.concurrent.ThreadPoolExecutor.getTask(ThreadPoolExecutor.java:1074)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1134)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+	at java.lang.Thread.run(Thread.java:748)
+```
+4. 利用`jstack <pid> > <pid>.tdump`导出线程栈的信息，栈信息文件通常以`.tdump`结尾
+5. 利用`jmap`导出堆信息，通过 `jmap -histo <pid> | head -20` 也可以分析堆中实例的数量及占用堆空间的大小。
+```txt 
+[root@VM-16-16-centos ~]# jmap -histo 1075022 | head -20
+
+ num     #instances         #bytes  class name
+----------------------------------------------
+   1:        766338       55176336  java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask
+   2:        766364       30654560  java.math.BigDecimal
+   3:        766338       24522816  T03_HelloGC$CardInfo
+   4:        766338       18392112  java.util.Date
+   5:        766338       18392112  java.util.concurrent.Executors$RunnableAdapter
+   6:        766338       12261408  T03_HelloGC$$Lambda$2/1044036744
+   7:             1        3594640  [Ljava.util.concurrent.RunnableScheduledFuture;
+   8:          1606         126136  [C
+   9:           717          82368  java.lang.Class
+  10:          1594          38256  java.lang.String
+  11:           790          35904  [Ljava.lang.Object;
+  12:            10          25232  [B
+  13:            56          21056  java.lang.Thread
+  14:           188          10528  java.lang.invoke.MemberName
+  15:           275           9856  [I
+  16:           276           8832  java.util.concurrent.ConcurrentHashMap$Node
+  17:           180           7200  java.lang.ref.SoftReference
+```
+导出堆文件 `jmap -dump:format=b,live,file=<pid>.hprof <pid> `，导出完成之后可以下载到本地机器，然后利用jvisualvm进行分析
+- jvisualvm为jdk的bin下，利用该命令即可启用
+- 装入下载下来的堆转储文件
