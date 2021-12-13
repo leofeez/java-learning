@@ -56,17 +56,17 @@ public class T06_MyThreadPoolExecutor {
                 // 核心线程数
                 2,
                 // 最大线程数
-                4,
+                50,
                 // 空闲存活时间
                 60,
                 // 时间单位
                 TimeUnit.SECONDS,
                 // 任务队列
-                new ArrayBlockingQueue<>(4),
+                new ArrayBlockingQueue<>(50),
                 // 创建线程的工厂（建议自定义）
-                Executors.defaultThreadFactory(),
+                new MyThreadFactory(),
                 // 拒绝策略 JDK 提供了4种
-                new ThreadPoolExecutor.AbortPolicy()) {
+                new MyRejectedHandler()) {
             @Override
             protected void beforeExecute(Thread t, Runnable r) {
                 System.out.println("准备执行" + t.getName());
@@ -98,6 +98,14 @@ public class T06_MyThreadPoolExecutor {
                 System.out.println(t.getName() + "发生了错误" + e);
             });
             return thread;
+        }
+    }
+
+    public static class MyRejectedHandler implements RejectedExecutionHandler {
+
+        @Override
+        public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
+            System.out.println("丢弃了任务，保存日志" + r.toString());
         }
     }
 }

@@ -40,8 +40,8 @@
 3. 1.7的时候还有PermGen 永久代/ 1.8 叫元数据区MetaSpace
     1.7PermGen永久代和1.8中的MetaSpace有什么区别？
     - 永久代和元数据区都是存放Class对象，Class字节码，包括动态生成的Class
-    - 1.7的时候永久代必须指定大小限制，1.8中的元数据区可以设置大小，无上限（受限于物理内存大小）
-    - 字符串常量1.7存放在MethodArea方法区/PermGen，1.8存放在堆中
+    - 1.7的时候永久代必须指定大小限制，1.8中的元数据区可以设置大小，无上限（受限于物理内存大小，当占用过大会被Linux Killer杀掉）
+    - 字符串常量1.7存放在MethodArea方法区/PermGen，1.8存放在堆中，String#intern()方法会将堆中的字符串移动到永久代。
     - MethodArea逻辑上的概念，1.7 就是永久代，1.8就是MetaSpace
 
 ## TLAB(Thread Local Allocation Buffer)
@@ -65,7 +65,8 @@ TLAB缺省情况下仅占有整个Eden空间的1%，也可以通过选项`-XX:TL
     - 多线程的时候不需要竞争Eden区就可以申请空间，提高效率
     
 4. 线程本地缓存分配不下，则直接进入线程共享的Eden区
-    
+   
+
 对于大对象：则直接进入老年代。
 
 ### GC 的过程分析
@@ -82,11 +83,12 @@ YoungGC大多数对象都会被GC，所以在新生代采用Copying算法去清�
     * CMS 默认为 6
     * G1 默认为 15
 - 动态年龄：
-在HotSpot虚拟机中，并不是严格的要求对象的年龄必须达到MaxTenuringThreshold才进行晋升到老年代，因为如果严格按照此规则会产生如下问题：
+  在HotSpot虚拟机中，并不是严格的要求对象的年龄必须达到MaxTenuringThreshold才进行晋升到老年代，因为如果严格按照此规则会产生如下问题：
   - 如果MaxTenuringThreshold设置的过大，如果新生代大量对象都没有达到这个阈值，就会导致对象不能及时的晋升到老年代，从而导致新生代晋升的机制
     没有效果。
   - 如果MaxTenuringThreshold设置的过小，就会导致新生代对象晋升过早，从而快速的撑满老年代的空间，从而频繁引发Major GC，影响效率。
     
+
 所以Hotspot虚拟机，为了能够适应不同程序的内存状况，使用了动态年龄机制，具体变现为：
 s1 + Eden存活对象 copy到 s2 中，如果超过s2的50% 则将年龄最大的进入老年代区域，这时候的MaxTenuringThreshold就会被设置为此次晋升的年龄大小，
 其中50%这个阈值可以通过`-XX:TargetSurvivorRation`进行设定。
@@ -105,11 +107,13 @@ s1 + Eden存活对象 copy到 s2 中，如果超过s2的50% 则将年龄最大�
 - ParNew
 - Parallel Scavenge
   
+
 运用在Old老年代的垃圾回收器有：
 - CMS
 - Serial Old
 - Parallel Old
   
+
 以上的垃圾回收器都是基于分代模型。
 
 穿插运用的垃圾回收器有：
@@ -161,7 +165,7 @@ s1 + Eden存活对象 copy到 s2 中，如果超过s2的50% 则将年龄最大�
         ——————————>   |              |   ——————————>   |          
                       |              |                 |          
         
-``` 
+```
 
 ### CMS - ConcurrentMarkSweep 老年代
 老年代，并发的，垃圾回收线程可以和用户程序同时运行，减轻Stop the world（200ms），由于CMS问题比较多，所以并不是主要的垃圾回收器，
@@ -179,7 +183,7 @@ s1 + Eden存活对象 copy到 s2 中，如果超过s2的50% 则将年龄最大�
                                                                          
                        初始标记         并发标记           重新标记         并发清理
         
-``` 
+```
 
 并发垃圾回收时无法忍受STW，所以CMS的出现是为了减少STW的响应时间。但是如果硬件内存很大，使用CMS会产生以下缺点：
 #### CMS 的缺点
@@ -287,9 +291,14 @@ JVM参数分类：
 - 非标准：-X，特定版本HotSpot支持
 - 不稳定：-XX开头，下个版本可能会取消
 
--XX:+PrintCommandLineFlag
+`-XX:+PrintCommandLineFlag
 -XX:+PrintFlagsFinal
--XX:+PrintFlagsInitial
+-XX:+PrintFlagsInitial`
+
+查看JVM默认配置： `java -XX:+PrintFlagsInitial`，可以配合 grep 进行搜索
+查看修改更新配置：`java -XX:+PrintFlagsFinal`
+- = 没有修改过
+- := 修改过
 
 ## 常见垃圾回收器组合参数设置
 
@@ -383,15 +392,15 @@ Heap
 
 ```                                                 
                                         年轻代总大小
-                                 (Eden + 一个survivor区)      内存起始空间地址       内存占用地址             内存空间结束地址
+                                 (Eden + 一个survivor区)      内存起始空间地址       内存占用地址       内存空间结束地址
                                           /                      /                   /                      /
                 Heap                     /                      /                   /                      /
-                PSYoungGen      total 6144K, used 5327K [0x00000007bf980000, 0x00000007c0000000, 0x00000007c0000000)
-  Eden    --        eden space 5632K, 94% used [0x00000007bf980000,0x00000007bfeb3c58,0x00000007bff00000)
-survivor0 --        from space 512K, 0% used [0x00000007bff80000,0x00000007bff80000,0x00000007c0000000)
-survivor1 --        to   space 512K, 0% used [0x00000007bff00000,0x00000007bff00000,0x00000007bff80000)
+            PSYoungGen      total 6144K, used 5327K [0x00000007bf980000, 0x00000007c0000000, 0x00000007c0000000)
+  Eden    --    eden space 5632K, 94% used [0x00000007bf980000,0x00000007bfeb3c58,0x00000007bff00000)
+survivor0 --    from space 512K, 0% used [0x00000007bff80000,0x00000007bff80000,0x00000007c0000000)
+survivor1 --    to   space 512K, 0% used [0x00000007bff00000,0x00000007bff00000,0x00000007bff80000)
 
-                ParOldGen       total 13824K, used 13577K [0x00000007bec00000, 0x00000007bf980000, 0x00000007bf980000)
+ParOldGen       total 13824K, used 13577K [0x00000007bec00000, 0x00000007bf980000, 0x00000007bf980000)
                     object space 13824K, 98% used [0x00000007bec00000,0x00000007bf942678,0x00000007bf980000)
                     Metaspace       used 2707K, capacity 4486K, committed 4864K, reserved 1056768K
                     class space    used 291K, capacity 386K, committed 512K, reserved 1048576K
@@ -401,6 +410,7 @@ survivor1 --        to   space 512K, 0% used [0x00000007bff00000,0x00000007bff00
 1. 吞吐量：用户代码时间/(用户代码时间 + 垃圾回收时间)
 2. 响应时间： STW 时间越短，响应时间越好 
    
+
 在不同场景下有不同的调优方向：
 - 科学计算的吞吐量优先
 - 网站以及API接口相应时间优先
@@ -454,7 +464,7 @@ survivor1 --        to   space 512K, 0% used [0x00000007bff00000,0x00000007bff00
 ```
 4. 利用`jstack <pid> > <pid>.tdump`导出线程栈的信息，栈信息文件通常以`.tdump`结尾
 5. 利用`jmap`导出堆信息，通过 `jmap -histo <pid> | head -20` 也可以分析堆中实例的数量及占用堆空间的大小。
-这里需要注意的是，jmap 导出堆转储文件会影响服务器的性能，所以一般情况下是不允许直接dump的，也可以在JVM启动时加入如下参数，在发生OOM的时候
+   **这里需要注意的是，jmap 导出堆转储文件会影响服务器的性能，所以一般情况下是不允许直接dump的，也可以在JVM启动时加入如下参数，在发生OOM的时候**
    自动生成堆转储文件`-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp`
 ```txt 
 [root@VM-16-16-centos ~]# jmap -histo 1075022 | head -20
@@ -486,8 +496,81 @@ survivor1 --        to   space 512K, 0% used [0x00000007bff00000,0x00000007bff00
 7. 利用jhat进行分析
 这里需要注意的是有时候导出的堆转储文件很大，如果直接使用jhat命令会报堆空间不足的错误，所以可以利用`jhat -J-mx512m <dump_file>`进行分析。
 jhat分析完成之后会在本地启动一个服务，端口为7000；
-   ```txt
-   ```
 
 ### 利用阿里开源工具Arthas
+
 > 
+
+## OutOfMemory OOM 常见报错
+
+1. `Exception in thread "main" java.lang.OutOfMemoryError: GC overhead limit exceeded`
+   产生原因：这种错误主要是由于程序运行时，垃圾回收占用的时间比例太大，实际执行运算的时间比例很小即GC线程垃圾回收占用时间超过98%并且GC回收的内容少于2%。
+
+   样例，利用死循环不断的往map中put值堆分配为` -Xmx10m -Xms10m`：
+
+   ```java
+   		public static void addRandomDataToMap() {
+           Map<Integer, String> dataMap = new HashMap<>();
+           Random r = new Random();
+         	// 不断的往map中put
+           while (true) {
+               dataMap.put(r.nextInt(), String.valueOf(r.nextInt()));
+           }
+       }
+   
+       public static void main(String[] args) {
+           addRandomDataToMap();
+       }
+   ```
+
+   产生原因：
+
+      - 堆内存分配的过小
+      - 存在内存泄漏
+
+   解决方案：
+
+   - 通过-Xmx和-Xms调整堆内存大小
+   - 查找内存泄漏的代码
+
+2. `java.lang.OutOfMemoryError: Java heap space`
+   堆空间溢出。
+
+   样例，线程池使用了无界队列如LinkedBlockingQueue，任务量大的时候会导致大量队列任务产生。
+
+   产生原因：
+
+    - 这种错误主要是由于程序运行时发生了内存泄漏，导致某些对象无法被GC回收，时间一长就会产生OOM。
+    - 存在大对象的内存分配。
+
+3. PermGen 永久代，JDK1.7中的概念，在PermGen保存了class信息还有一些杂项比如字符串常量。
+
+   `-XX:PermSize`：设置持久代(perm gen)初始值，默认值为物理内存的1/64
+
+   `-XX:MaxPermSize`：设置持久代最大值，默认为物理内存的1/4
+
+
+4. Metaspace 这个是JDK1.8提出来的概念，称为元数据区，在JDK1.7中称为永久代Perm，主要用来存放class类信息
+   `-XX:MetaspaceSize`:表示JVM首次元数据区空间不够时进行GC的阈值，默认为20m。
+   
+   `-XX:MaxMetaspaceSize`受限于物理内存大小。
+   
+   大量的动态生成class，比如反射，Lambda表达式，代理类的生成，可能会导致OOM产生
+   
+5. `
+   java.lang.OutOfMemoryError : unable to create new native Thread
+   `
+
+   大量的创建线程
+
+6. `
+   java.lang.OutOfMemoryError: Requested array size exceeds VM limit
+   `
+
+   声明了超出VM限制的数组，在为数组分配内存之前，JVM 会执行一项检查。要分配的数组在该平台是否可以寻址(addressable)，如果不能寻址(addressable)就会抛出这个错误。
+
+7. `
+   java.lang.OutOfMemoryError: Out of swap space
+   `
+
+8. `java.lang.OutOfMemoryError: stack_trace_with_native_method`
