@@ -1,7 +1,7 @@
 package tree;
 
-import com.sun.tools.javac.util.Assert;
 
+import java.util.Objects;
 
 /**
  * 二叉树
@@ -20,7 +20,7 @@ public class BST<V extends Comparable<V>> {
 
     public TreeNode<V> put(V value) {
 
-        Assert.checkNonNull("The value of BST tree can not be null!");
+        Objects.requireNonNull(value, "The value of BST tree can not be null!");
 
         TreeNode<V> newNode = new TreeNode<>(value);
 
