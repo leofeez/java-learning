@@ -71,6 +71,25 @@ boolean isShutdown();
 <T> Future<T> submit(Callable<T> task);
 ```
 
+submit 和 execute 方法的区别？
+submit方法其实底层都是调用了execute核心方法，在调用execute方法前，会将task转换为RunnableFuture，然后再执行execute方法真正的执行线程任务。
+```java
+    public <T> Future<T> submit(Callable<T> task) {
+        if (task == null) throw new NullPointerException();
+        // 转换为 RunnableFuture
+        RunnableFuture<T> ftask = newTaskFor(task);
+        // 执行线程任务
+        execute(ftask);
+        return ftask;
+    }
+```
+入参区别：
+ - submit入参为Callable对象
+ - execute入参为Runnable对象
+出参区别：
+ - execute方法不会返回线程执行的结果
+ - submit方法返回的Future对象可以利用get方法获取线程执行后的结果
+
 ### ScheduledExecutorService
 
 基于ExecutorService扩展了可对线程任务进行调度的线程池，当线程任务提交到线程池中后不一定是立即执行的，可以指定任务的延迟执行时间和任务的执行周期，主要有以下几个方法：

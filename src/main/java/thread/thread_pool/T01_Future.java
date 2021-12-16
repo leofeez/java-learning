@@ -12,7 +12,11 @@ public class T01_Future {
         ExecutorService executorService = Executors.newFixedThreadPool(2);
         Future<String> future = executorService.submit(() -> {
             for (int i = 0; i < 5; i++) {
-                TimeUnit.SECONDS.sleep(1);
+                try {
+                    TimeUnit.SECONDS.sleep(1);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
                 System.out.println("sleep " + (i + 1) + "s");
             }
             return "I'm completed";
