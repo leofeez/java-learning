@@ -141,15 +141,7 @@ s1 + Eden存活对象 copy到 s2 中，如果超过s2的50% 则将年龄最大�
 ### Serial 年轻代串行化回收
 当触发YGC的时候，会STW(stop the world) ，然后利用单个的GC线程去进行垃圾回收，单CPU效率高，虚拟机client模式默认的垃圾回收器。
 
-```
-           用户线程         GC线程          用户线程
-                      |              |                 |          
-        ——————————>   |              |   ——————————>   |          
-        ——————————>   |  -------->   |   ——————————>   | -------->
-        ——————————>   |              |   ——————————>   |          
-                      |              |                 |          
-               safe point(安全点)
-```
+![SerialGC.png](SerialGC.png)
 
 ### Serial Old
 运用在老年代，使用 Mark Compact 标记压缩算法，原理同 Serial
@@ -157,51 +149,21 @@ s1 + Eden存活对象 copy到 s2 中，如果超过s2的50% 则将年龄最大�
 ### Parallel Scavenge 年轻代并行化回收
 当触发YGC的时候，会STW(stop the world) ，然后利用多个GC线程并行的去进行垃圾回收。
 
-```
-       用户线程         GC线程          用户线程
-                  |             |                 |          
-    ——————————>   | -------->   |   ——————————>   | -------->        
-    ——————————>   | -------->   |   ——————————>   | -------->
-    ——————————>   |             |   ——————————>   |          
-                  |             |                 |          
-    
-```
+![ParallelGC.png](ParallelGC.png)
 
 ### Parallel Old
 运用在老年代，原理同 Parallel
 
 ### Parallel New 年轻代并行化回收
-当触发YGC的时候，会STW(stop the world) ，然后利用多个GC线程并行的去进行垃圾回收。
+与Parallel Scavenge 类似，当触发YGC的时候，会STW(stop the world) ，然后利用多个GC线程并行的去进行垃圾回收。
 与Parallel Scavenge 的区别是该垃圾回收器和CMS配合使用
-```
-      用户线程         GC线程          用户线程
-                 |              |                 |          
-   ——————————>   |  -------->   |   ——————————>   | -------->        
-   ——————————>   |  -------->   |   ——————————>   | -------->
-   ——————————>   |              |   ——————————>   |          
-                 |              |                 |          
-   
-```
 
 ### CMS - ConcurrentMarkSweep 老年代
 CMS Concurrent Mark Sweep，从名字就可以看出CMS是并发的，CMS是老年代的垃圾回收器，垃圾回收线程可以和用户程序同时运行，
 减轻Stop the world（200ms），是JDK1.4后期引入，是里程碑式的，开启了并发回收的大门。
 
 CMS垃圾回收过程：
-```
-                   STW                               STW
-      用户线程                  用户线程 + GC线程                    用户线程 + GC
-              |             |                 |                 |          
-   ——————————>|             |   ——————————>   |   ---------->   | ——————————>        
-   ——————————>|  -------->  |   ——————————>   |   ---------->   | ——————————>
-   ——————————>|             |   ——————————>   |   ---------->   | ——————————>        
-              |             |                 |                 |         
-              |             |   ---------->   |                 | ---------->
-              |             |   ---------->   |                 | ---------->
-                                                                    
-                1. 初始标记        2.并发标记         3.重新标记       4.并发清理
-   
-```
+![CMS.png](CMS.png)
 分为四个阶段：
 1. 初始标记InitialMark：这个阶段是STW的，但是因为从根对象开始标记，通过GC Roots 往下标记一级，所以STW的时间很短。
 2. 并发标记ConcurrentMark，这个阶段是最耗时的，但是由于是并发执行的，所以不会产生STW，不影响用户线程。
@@ -369,9 +331,7 @@ JVM参数分类：
 - 非标准：-X，特定版本HotSpot支持
 - 不稳定：-XX开头，下个版本可能会取消
 
-`-XX:+PrintCommandLineFlag
--XX:+PrintFlagsFinal
--XX:+PrintFlagsInitial`
+`-XX:+PrintCommandLineFlag`
 
 查看JVM默认配置： `java -XX:+PrintFlagsInitial`，可以配合 grep 进行搜索
 查看修改更新配置：`java -XX:+PrintFlagsFinal`
@@ -443,28 +403,8 @@ Heap
 ```
 
 从上述日志分析日志格式如下：
-```
-                                        回收前          年轻代
-   YoungGC    GC发生的原因     年代   年轻代占用大小       总大小       回收后堆占用                              
-   /            /             /          /             /             /                                      
-  /            /             /          /             /             /                                               
-[GC (Allocation Failure) [PSYoungGen: 4780K->416K(6144K)] 4780K->4520K(19968K), 0.0017916 secs] [Times: user=0.00 sys=0.01, real=0.01 secs]
-                                               \            \             \                                         /
-                                                \            \             \                                       /
-                                               回收后        回收前         总堆空间                              内核态消耗时间
-                                              年轻代空间     堆占用
-                                              
 
-                                    回收前          年轻代
-   Full GC    GC发生的原因  年代     老年代大小       总大小        回收后堆占用         元数据区                   
-   /            /         /          /             /               /                /
-  /            /         /          /             /               /                /
-[Full GC (Ergonomics) [ParOldGen: 9224K->9493K(13824K)] 9576K->9493K(19968K), [Metaspace: 2675K->2675K(1056768K)], 0.0034673 secs] [Times: user=0.01 sys=0.00, real=0.00 secs]
-                                             \            \             \
-                                              \            \             \
-                                             回收后        回收前         总堆空间
-                                            年轻代空间     堆占用
-```
+![ParallelGCLog.png](ParallelGCLog.png)
 
 堆占用情况如下：                                            
 
