@@ -7,11 +7,13 @@
 - reference count: 引用计数，即在对象上记录着有多少个引用指向它，无法解决循环引用的问题
 - root searching: 根可达算法，根对象包含 线程栈变量，静态变量，常量池，JNI指针
   根对象包含：
-  * JVM stack
-  * native method stack
-  * runtime constant pool
-  * static reference in method
-  * Class
+  * JVM stack：虚拟机栈(栈桢中本地变量表)中引用的对象
+  * native method stack：本地方法栈中JNI(即一般说的Native方法)中引用的对象
+  * runtime constant pool：运行时常量池引用的对象
+  * static reference in method area：方法区中类静态属性
+  * Class：方法区中Class对象
+    
+**固定的根对象**主要存在全局引用（例如常量或者类静态属性）
 
 ## 垃圾回收算法
 - Mark sweep: 标记清除，容易内存碎片化
@@ -141,7 +143,7 @@ s1 + Eden存活对象 copy到 s2 中，如果超过s2的50% 则将年龄最大�
 ### Serial 年轻代串行化回收
 当触发YGC的时候，会STW(stop the world) ，然后利用单个的GC线程去进行垃圾回收，单CPU效率高，虚拟机client模式默认的垃圾回收器。
 
-![SerialGC.png](./SerialGC.png)
+![SerialGC.png](img/SerialGC.png)
 
 ### Serial Old
 运用在老年代，使用 Mark Compact 标记压缩算法，原理同 Serial
@@ -149,7 +151,7 @@ s1 + Eden存活对象 copy到 s2 中，如果超过s2的50% 则将年龄最大�
 ### Parallel Scavenge 年轻代并行化回收
 当触发YGC的时候，会STW(stop the world) ，然后利用多个GC线程并行的去进行垃圾回收。
 
-![ParallelGC.png](./ParallelGC.png)
+![ParallelGC.png](img/ParallelGC.png)
 
 ### Parallel Old
 运用在老年代，原理同 Parallel
@@ -163,7 +165,7 @@ CMS Concurrent Mark Sweep，从名字就可以看出CMS是并发的，CMS是老�
 减轻Stop the world（200ms），是JDK1.4后期引入，是里程碑式的，开启了并发回收的大门。
 
 CMS垃圾回收过程：
-![CMS.png](./CMS.png)
+![CMS.png](img/CMS.png)
 分为四个阶段：
 1. 初始标记InitialMark：这个阶段是STW的，但是因为从根对象开始标记，通过GC Roots 往下标记一级，所以STW的时间很短。
 2. 并发标记ConcurrentMark，这个阶段是最耗时的，但是由于是并发执行的，所以不会产生STW，不影响用户线程。
@@ -188,7 +190,7 @@ CardTable也利用了物理内存中的Page页概念，JVM也是将堆内存分�
 CardTable[this.address >> 9] = 0;
 ```
 将当前空间的起始地址值向右移9位（即除以2的9次方，512）得到整个CardTable，所以CardTable的每个元素的索引即代表0, 512, 1024....对应的CardPage起始地址，依次类推，
-![img_1.png](./img_1.png)
+![img_1.png](img/img_1.png)
 从上图可以看出，起始数组对应的下标 `index * CardPageSize` 即每一个CardPage的起始地址值，CardTable数组中的每个元素即代表CardPage是否为Dirty。
 这样当老年代引用了年轻代的对象的时候，就会通过写屏障(Write Barrier)将老年代对象所在的CardPage标记为Dirty，这样在GC进行回收标记的时候，就可以避免去扫描整个老年代，
 直接去扫描CardTable找到哪些为Dirty的CardPage即可，所以在CMS中叫Points-Out(我引用了谁)。
@@ -404,7 +406,7 @@ Heap
 
 从上述日志分析日志格式如下：
 
-![ParallelGCLog.png](./ParallelGCLog.png)
+![ParallelGCLog.png](img/ParallelGCLog.png)
 
 堆占用情况如下：                                            
 
