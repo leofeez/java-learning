@@ -35,7 +35,7 @@ synchronized用在方法上和synchronized(this){整个方法}是同等效果，
 synchronized(Object): 不能用String常量，Integer, Long, 字符串会存在常量池中
 并且锁住的对象不能指向别的实例，所以以对象作为锁的时候必须加final防止指向的地址发生改变。
 
-JDK1.5之前早期的时候，synchronized 是重量级的锁，效率比较低。
+JDK1.5之前早期的时候，synchronized 是重量级的锁，效率比较低。JDK1.7增加了锁升级，提升了synchronized的效率。
 
 ## 实现原理
 

@@ -1,6 +1,9 @@
 # JVM Runtime Data Area and JVM Instructions
 
 ## Runtime Data Area 运行时数据区
+
+![img.png](img.png)
+
 - JVM stacks：每个线程独享
 - 栈帧【stack frame】：是用于帮助虚拟机执行方法调用与方法执行的数据结构。
   每一个方法对应一个栈帧，线程独享，存储了以下内容：
@@ -8,7 +11,8 @@
   * Operand Stack：操作数栈
   * Dynamic Linking：动态链接，比如在A() 方法中调用了B()，这时候需要去查找B()的符号链接。
   * return address: 返回地址，比如在A() 方法中调用了B()，B() 的返回值放在什么地方
-- Program Counter：线程独享，主要是因为线程切换后，再切换回来知道下一步应该执行什么指令
+- Program Counter：线程独享，每个线程都有它自己的程序计数器，是线程私有的，生命周期与线程的生命周期保持一致。
+  之所以需要程序计数器，因为CPU对于线程是需要频繁切换执行，程序计数器就是为了在线程切换后，再切换回来知道下一步应该执行什么指令
   存放下一条指令，虚拟机的运行，类似于这样的循环
   ```java
         while(not end) {
@@ -32,7 +36,7 @@
 
 - invokeinterface：调用接口中的方法，实际上是在运行期决定的，决定到底调用实现该接口的哪个对象的方法。
 - invokestatic：调用静态方法。【重要】
-- invokespectial：调用自己的私有方法、构造方法(<int>)以及父类的方法。
+- invokespectial：调用自己的私有方法、构造方法(<init>)以及父类的方法。
 - invokevirtual：调用虚方法，在c++中是存在虚方法这个概念的，但是Java是不存在的，但是在字节码中是存在有虚方法的，运行期动态查找的过程。【重要】
 - invokedynamic：动态调用方法。这是五个调用中最为复杂的，但是它是在JDK1.7之后才引用的，本身Java是一门静态的语言，但是通过一些引擎可以调用Javascript，这里了解一下既可。
 

@@ -1,5 +1,6 @@
 package jvm.t02_class_loader;
 
+import java.lang.String;
 import sun.net.spi.nameservice.dns.DNSNameService;
 
 /**

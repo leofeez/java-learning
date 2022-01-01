@@ -1,5 +1,7 @@
 package jvm.t02_class_loader;
 
+import java.lang.String;
+
 /**
  *
  *

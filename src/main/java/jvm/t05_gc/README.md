@@ -530,7 +530,7 @@ ParOldGen       total 13824K, used 13577K [0x00000007bec00000, 0x00000007bf98000
    7:             1        3594640  [Ljava.util.concurrent.RunnableScheduledFuture;
    8:          1606         126136  [C
    9:           717          82368  java.lang.Class
-  10:          1594          38256  java.lang.String
+  10:          1594          38256  java.String
   11:           790          35904  [Ljava.lang.Object;
   12:            10          25232  [B
   13:            56          21056  java.lang.Thread
