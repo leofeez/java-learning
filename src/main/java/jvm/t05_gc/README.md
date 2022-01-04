@@ -202,10 +202,53 @@ CMS垃圾回收过程：
 3. 重新标记Remark，这个阶段是STW的
 4. 并发清理
 
+#### CMS 的缺点
+由于CMS问题比较多，所以并不是主要的垃圾回收器， 只是配合ParallelNew，CMS主要有以下缺点：
+
+- 内存碎片化：由于采用 Mark-Sweep标记清除算法，必然会产生碎片化。
+- 浮动垃圾：在CMS的并发清理过程，由于有用户线程正在运行，原本已经被垃圾回收器标记为存活的对象，这时候突然指向的引用又断开，这时候变成了垃圾对象，所以产生新的垃圾，称为浮动垃圾。
+
+基于以上两个缺点，当产生大量碎片和浮动垃圾之后，在Eden区或者survivor区对象升级到老年代时，发现没有足够连续的内存
+可用，就会回退到使用serial GC的mark-compact算法做full GC。也就是mark-sweep为主，mark-compact为备份的经典配置，当硬件内存很大的时候，这个过程会消耗大量时间。
+
+解决办法：
+- -XX:CMSFullGCsBeforeCompaction
+- -XX:CMSInitiatingOccupancyFraction 92% 可以修改为68%，意思即让CMS尽早的去回收老年代空间，保持老年代足够的空间，推迟由碎片化引致的full GC的发生。
+
+#### CMS垃圾回收器常用参数
+
+-XX:+UseConcMarkSweepGC
+-XX:ParallelCMSThreads CMS线程数量
+-XX:CMSInitiatingOccupancyFraction 使用多少比例的老年代后开始CMS收集，默认是68%(近似值)，如果频繁发生SerialOld卡顿，应该调小，（频繁CMS回收）
+-XX:+UseCMSCompactAtFullCollection 在FGC时进行压缩
+-XX:CMSFullGCsBeforeCompaction 多少次FGC之后进行压缩
+-XX:+CMSClassUnloadingEnabled
+-XX:CMSInitiatingPermOccupancyFraction 达到什么比例时进行Perm回收
+GCTimeRatio 设置GC时间占用程序运行时间的百分比
+-XX:MaxGCPauseMillis 停顿时间，是一个建议时间，GC会尝试用各种手段达到这个时间，比如减小年轻代
+
+#### 案例分析：
+有一个50万PV的资料类网站（从磁盘提取文档到内存）原服务器32位，1.5G 的堆，用户反馈网站比较缓慢，因此公司决定升级，新的服务器为64位，
+16G 的堆内存，结果用户反馈卡顿十分严重，反而比以前效率更低了。
+
 参考资料：
 > https://docs.oracle.com/javase/8/docs/technotes/guides/vm/gctuning/toc.html
 > https://www.cnblogs.com/webor2006/p/11055468.html
->
+
+
+### G1 - Garbage First Collector
+
+在G1之前的分代模型的垃圾回收器都是将VM的堆内存分为两块连续的，一个年轻代一个老年代，但是随着硬件内存容量的变大，垃圾回收器面对的内存也随之变大，
+堆空间越大，存储的对象越多，对象图结构越复杂，每次垃圾回收需要扫描的对象而产生的停顿时间自然就更长久，虽然垃圾回收器都采用了一些手段来优化了这个过程，比如CardTable就是为了防止去扫描整个老年代空间。
+但是这种优化也是有限的，所以在G1的出现就是解决这种越来越大内存的给GC带来的压力。
+
+与其他垃圾回收器的很大的区别在于G1 只是在逻辑分代，而物理上不分代，**并且面对大内存，G1采用了分而治之的思想**。
+在G1中，堆被分为很多个大小相同的区域(Region)，每个区域有可能是老年代Old，Humongous(Humongous是大对象，当Humongous的大小超过Region一半是，使用多个连续的Humongous来存放)，
+也有可能是新生代Eden，Survivor，并且每个Region的分代也不是固定和连续的。
+
+在传统的垃圾回收器中，新生代和老年代的比例为1：2，而在G1中，新生代和老年代的空间比例在5%-60%，会动态调整，这是G1预测停顿时间的基准。
+
+#### G1 Mixed GC
 
 #### 如何解决跨代引用? - CardTable
 
@@ -228,49 +271,6 @@ CardTable[this.address >> 9] = 0;
 
 在并发情况下，如果多个线程都产生了写屏障，必然会影响程序的性能能，所以JVM利用-XX:+UseCondCardMark进行判断，如果当期CardPage已经标记为Dirty，则不进行操作，
 所以通过这个判断减少并发写操作，可以避免在高并发情况下可能发生的并发写卡表问题。
-
-#### CMS 的缺点
-由于CMS问题比较多，所以并不是主要的垃圾回收器， 只是配合ParallelNew，CMS主要有以下缺点：
-
-- 内存碎片化：由于采用 Mark-Sweep标记清除算法，必然会产生碎片化。
-- 浮动垃圾：在CMS的并发清理过程，由于有用户线程正在运行，原本已经被垃圾回收器标记为存活的对象，这时候突然指向的引用又断开，这时候变成了垃圾对象，所以产生新的垃圾，称为浮动垃圾。
-
-基于以上两个缺点，当产生大量碎片和浮动垃圾之后，在Eden区或者survivor区对象升级到老年代时，发现没有足够连续的内存
-可用，就会导致CMS启动Serial Old 进行Mark-Compact-Sweep标记压缩清除垃圾，当硬件内存很大的时候，这个过程会消耗大量时间。
-
-解决办法：
-- -XX:CMSFullGCsBeforeCompaction
-- -XX:CMSInitiatingOccupancyFraction 92% 可以修改为68%，意思即让CMS保持老年代足够的空间。
-
-#### CMS垃圾回收器常用参数
-
--XX:+UseConcMarkSweepGC
--XX:ParallelCMSThreads CMS线程数量
--XX:CMSInitiatingOccupancyFraction 使用多少比例的老年代后开始CMS收集，默认是68%(近似值)，如果频繁发生SerialOld卡顿，应该调小，（频繁CMS回收）
--XX:+UseCMSCompactAtFullCollection 在FGC时进行压缩
--XX:CMSFullGCsBeforeCompaction 多少次FGC之后进行压缩
--XX:+CMSClassUnloadingEnabled
--XX:CMSInitiatingPermOccupancyFraction 达到什么比例时进行Perm回收
-GCTimeRatio 设置GC时间占用程序运行时间的百分比
--XX:MaxGCPauseMillis 停顿时间，是一个建议时间，GC会尝试用各种手段达到这个时间，比如减小年轻代
-
-#### 案例分析：
-有一个50万PV的资料类网站（从磁盘提取文档到内存）原服务器32位，1.5G 的堆，用户反馈网站比较缓慢，因此公司决定升级，新的服务器为64位，
-16G 的堆内存，结果用户反馈卡顿十分严重，反而比以前效率更低了。
-
-### G1 - Garbage First Collector
-
-在G1之前的分代模型的垃圾回收器都是将VM的堆内存分为两块连续的，一个年轻代一个老年代，但是随着硬件内存容量的变大，垃圾回收器面对的内存也随之变大，
-堆空间越大，存储的对象越多，对象图结构越复杂，每次垃圾回收需要扫描的对象而产生的停顿时间自然就更长久，虽然垃圾回收器都采用了一些手段来优化了这个过程，比如CardTable就是为了防止去扫描整个老年代空间。
-但是这种优化也是有限的，所以在G1的出现就是解决这种越来越大内存的给GC带来的压力。
-
-与其他垃圾回收器的很大的区别在于G1 只是在逻辑分代，而物理上不分代，**并且面对大内存，G1采用了分而治之的思想**。
-在G1中，堆被分为很多个大小相同的区域(Region)，每个区域有可能是老年代Old，Humongous(Humongous是大对象，当Humongous的大小超过Region一半是，使用多个连续的Humongous来存放)，
-也有可能是新生代Eden，Survivor，并且每个Region的分代也不是固定和连续的。
-
-在传统的垃圾回收器中，新生代和老年代的比例为1：2，而在G1中，新生代和老年代的空间比例在5%-60%，会动态调整，这是G1预测停顿时间的基准。
-
-#### G1 Mixed GC
 
 
 #### CSet（CollectionSet） 和 Rset(Remembered Set)
@@ -629,9 +629,23 @@ jhat分析完成之后会在本地启动一个服务，端口为7000；
 ## 常见JVM参数
 
 1. Xmx: 堆内存的最大Heap值，默认为物理内存的1/4。默认当空余堆内存小于指定阈值时，JVM会增大Heap到-Xmx指定的大小。
-2. Xms: 堆内存的最小Heap值，默认为物理内存的1/64，但小于1G。默认当空余堆内存大于指定阈值时，JVM会减小heap的大小到-Xms指定的大小。
    
-    Xmx, Xms 设置为一样的好处：为了避免在生产环境由于heap内存扩大或缩小导致应用停顿，降低延迟，同时避免每次垃圾回收完成后JVM重新分配内存。所以，-Xmx和-Xms一般都是设置相等的。
-    >https://zhuanlan.zhihu.com/p/394762019
+2. Xms: 堆内存的最小Heap值（初始值），默认为物理内存的1/64，但小于1G。默认当空余堆内存大于指定阈值时，JVM会减小heap的大小到-Xms指定的大小。
+   >Xmx, Xms 设置为一样的好处：为了避免在生产环境由于heap内存扩大或缩小导致应用停顿，降低延迟，同时避免每次垃圾回收完成后JVM重新分配内存。所以，-Xmx和-Xms一般都是设置相等的。
+   >https://zhuanlan.zhihu.com/p/394762019
     
-3. Xmn: 
+3. Xmn: 指定堆的年轻代内存分配的的初始值和最大值，由于年轻代垃圾回收的频率比较高，如果年轻代空间分配过小，会导致频繁的YGC并且年轻代对象会过早的晋升到老年代，从而导致快速的撑满
+老年代空间，最终引发FGC，而年轻代空间设置过大，会导致一次YGC的时间比较长，所以建议是年轻代的空间设置为整个堆空间的1/2 ~ 1/4，目前JDK8默认为1/3。
+   
+4. -XX:NewRatio：指定老年代和年轻代空间大小的比率。默认为2，即老年代和年轻代空间大小的比率为2:1，年轻代占整个堆内存空间大小的1/3。
+   `如： -XX:NewRatio=2`
+   
+5. -XX:SurvivorRatio：指定Eden区和Survivor的内存空间分配比例，默认为8，表示Eden占整个年轻代的80%。
+   `如：-XX:SurvivorRatio=8`
+   
+6. -XX:MetaspaceSize：指定**元空间第一次触发垃圾回收的内存大小的阈值。**，这里不是指元空间的初始大小，而是第一次进行GC的阈值，JDK8中的Metaspace空间是会动态扩容的，
+   不像JDK7 PermGeneration必须指定大小并且不会自动扩容，一般来说Metaspace占用约20.8M，-XX:MetaspaceSize默认为256M。
+   
+7. -XX:MaxMetaspaceSize: 指定Metaspace分配内存的最大值，默认无限制，取决于系统的可用内存容量，但是为了避免无限制占用，通常会适当设置一下大小，
+   `如：-XX:MaxMetespaceSize=512M`
+   

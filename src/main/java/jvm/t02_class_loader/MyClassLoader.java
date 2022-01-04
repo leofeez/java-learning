@@ -11,17 +11,17 @@ import java.util.*;
  */
 public class MyClassLoader extends ClassLoader {
 
-    @Override
-    public Class<?> loadClass(String name) throws ClassNotFoundException {
-        String relativePath = name.replaceAll("\\.", "/");
-        File file = new File("/Users/leofee/projects/leofee/java-learning/out/production/java-learning/" + relativePath + ".class");
-
-        if (!file.exists()) {
-            // throws ClassNotFoundException
-            return super.loadClass(name);
-        }
-        return findClass(name);
-    }
+//    @Override
+//    public Class<?> loadClass(String name) throws ClassNotFoundException {
+//        String relativePath = name.replaceAll("\\.", "/");
+//        File file = new File("/Users/leofee/projects/leofee/java-learning/out/production/java-learning/" + relativePath + ".class");
+//
+//        if (!file.exists()) {
+//            // throws ClassNotFoundException
+//            return super.loadClass(name);
+//        }
+//        return findClass(name);
+//    }
 
     @Override
     protected Class<?> findClass(String name) throws ClassNotFoundException {
@@ -76,11 +76,11 @@ public class MyClassLoader extends ClassLoader {
         MyClassLoader classLoader = new MyClassLoader();
 
         Class<?> hello = classLoader.loadClass("jvm.t02_class_loader.Hello");
-        Class<?> hello2 = classLoader.loadClass("jvm.t02_class_loader.Hello");
+//        Class<?> hello2 = classLoader.loadClass("jvm.t02_class_loader.Hello");
 
         Hello instance = (Hello) hello.newInstance();
         instance.sayHello();
 
-        System.out.println(hello == hello2);
+//        System.out.println(hello == hello2);
     }
 }
