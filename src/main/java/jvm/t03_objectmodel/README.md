@@ -197,6 +197,8 @@ Premain-Class: object_agent.ObjectAgent
 
 对象的GC年龄最大为15，因为在markword对象头中，GC年龄只用了4bit进行保存。
 
+|锁状态|25bit|
+
 ## 对象如何定位
 
 - 句柄池(gc 效率比较高)：JVM需要划分出一块内存作为句柄池，句柄中存储的就是对象实例数据的地址和对象类型地址。
@@ -206,5 +208,7 @@ Premain-Class: object_agent.ObjectAgent
 - 直接引用（hotspot）：目前HotSpot虚拟机采用的就是这种方案，在reference中直接存储了对象的实例数据指针和类型指针，访问对象的效率更高，因为
 节省了一次指针的定位。
 
+参考文章：
+>
 > https://blog.csdn.net/clover_lily/article/details/80095580
 
