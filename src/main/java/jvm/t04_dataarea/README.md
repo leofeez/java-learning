@@ -4,14 +4,14 @@
 
 ![img.png](img.png)
 
-- JVM stacks：每个线程独享
-- 栈帧【stack frame】：是用于帮助虚拟机执行方法调用与方法执行的数据结构。
+- JVM stacks：每个线程独享。虚拟机栈是由一个个的栈帧(stack frame)组成：是用于帮助虚拟机执行方法调用与方法执行的数据结构。
   每一个方法对应一个栈帧，线程独享，存储了以下内容：
   * Local Variables Table，局部变量表，hotspot的LocalVariables类似于寄存器
   * Operand Stack：操作数栈
   * Dynamic Linking：动态链接，比如在A() 方法中调用了B()，这时候需要去查找B()的符号链接。
   * return address: 返回地址，比如在A() 方法中调用了B()，B() 的返回值放在什么地方
-- Program Counter：线程独享，每个线程都有它自己的程序计数器，是线程私有的，生命周期与线程的生命周期保持一致。
+- native method stacks: 本地方法栈，线程独享
+- Program Counter：程序计数器，线程独享，每个线程都有它自己的程序计数器，是线程私有的，生命周期与线程的生命周期保持一致。
   之所以需要程序计数器，因为CPU对于线程是需要频繁切换执行，程序计数器就是为了在线程切换后，再切换回来知道下一步应该执行什么指令
   存放下一条指令，虚拟机的运行，类似于这样的循环
   ```java
@@ -21,16 +21,15 @@
             // PC ++
         }
   ```
+- Heap：堆，线程共享，根据分代模型，堆分为年轻代和老年代，年轻代又分为Eden和两个survivor区。
 - method area: 方法区，线程共享
   JVM线程共享区域，存放 class 的结构
   具体实现分为：
   * JDK1.8之前的实现方式为 Perm Space 永久区，Full GC 不会清理
   * JDK1.8及之后的实现方式为 Meta Space 字符串常量位于堆，会触发GC 
 - runtime constant pool
-- native method stacks: 本地方法栈，线程独享
 - Direct memory
   直接内存，JVM可以直接访问内核空间的内存，这个内存归操作系统管理，如网络IO，提高效率，实现0拷贝
-- Heap：堆，线程共享
 
 关于虚拟机栈，首先得明白栈的数据结构是先进后出(FILO)。
 

@@ -17,7 +17,7 @@ java虚拟机将描述类的数据从Class文件加载到内存，并对数据�
 一个类加载器收到类加载请求后不会立即先加载自己，而是先去让父级的加载器去检查缓存中，是否已经加载，层层迭代，到最顶层加载器都没有，
 会往下进行委派去加载指定的类。
 
-![双亲委派机制](双亲委派.png)
+![双亲委派机制](img/双亲委派.png)
 
 双亲委派机制的好处：
 
@@ -34,7 +34,7 @@ java虚拟机将描述类的数据从Class文件加载到内存，并对数据�
 Launcher是java程序的入口，Launcher的ClassLoader是BootstrapClassLoader，在Launcher创建的同时，还会创建`ExtClassLoader`，`AppClassLoader`并且还将当前应用的
 AppClassLoader设置到线程上下文中去（_这一步的作用在下文介绍破坏双亲委派机制-SPI时会用到，这里先埋个点_）。
 
-![Launcher.png](Launcher.png)
+![Launcher.png](img/Launcher.png)
 
 ## ClassLoader源码
 ClassLoader 是一个抽象类，像 ExtClassLoader，AppClassLoader 都是由该类派生出来，实现不同的类装载机制。
@@ -42,7 +42,7 @@ ClassLoader 是一个抽象类，像 ExtClassLoader，AppClassLoader 都是由�
 
 在装载Class之前首先会顺着parent方向(AppClassLoader -> ExtClassLoader->BootStrapClassLoader)去查看否已经装载过，如果装载过Class直接返回，当到达最顶层的BootStrapClassLoader之后如果依旧没没找到，则从parent往下去委托给子加载器去加载Class。
 
-![ClassLoader#loadClass.png](ClassLoader_loadClass.png)
+![ClassLoader#loadClass.png](img/ClassLoader_loadClass.png)
 
 
 ## 自定义类加载器
@@ -62,7 +62,7 @@ ClassLoader 是一个抽象类，像 ExtClassLoader，AppClassLoader 都是由�
 
 在JDBC4.0之前，我们要加载数据库驱动，必须要先利用`Class.forName("com.mysql.jdbc.Driver");`将具体的数据库驱动实现类加载进来，`Class.forName`其实是利用了AppClassLoader进行加载，只要数据库驱动类在ClassPath中能找到即可。
 
-![Class.forName.png](Class.forName.png)
+![Class.forName.png](img/Class.forName.png)
 
 在JDBC4.0之后，我们可以不需要再利用`Class.forName`手工加载数据库的驱动类，因为JDK中的SPI机制（在META-INF/services/目录下定义以接口全限定名的文件，文件的内容即接口的实现类全限定名），
 JDK会利用`ServiceLoader.load`方法去扫描这些实现类。下面我们就以Mysql数据库驱动为例，从获取数据库连接的源码去分析整个过程：
@@ -70,28 +70,28 @@ JDK会利用`ServiceLoader.load`方法去扫描这些实现类。下面我们就
 
 1. 通常我们获取数据库的连接都是通过`DriverManager.getConnection(url, username, password)`;
    调用该方法首先会触发DriverManager的静态代码块，在`loadInitialDrivers()`中使用了`ServiceLoader`去查找那些Driver对应的SPI的描述文件。
-![DriverManager_init.png](DriverManager_init.png)
+![DriverManager_init.png](img/DriverManager_init.png)
    
 2. 根据指定的接口Class(这里指的是Driver的接口)，并通过`Thread.currentThread().getContextClassLoader()`获取线程上下文的ClassLoader，
    然后实例化一个ServiceLoader，这里的获取到的ClassLoader其实就是AppClassLoader，关于线程上下文的ClassLoader就是在上面`Launcher`类中设置进去的。
    
-![ServiceLoader实例化](ServiceLoader实例化.png)
+![ServiceLoader实例化](img/ServiceLoader实例化.png)
 
 3. ServiceLoader在内部类`LazyIterator#nextSerivice()`遍历的时候，使用第2步中的ClassLoader（实际就是AppClassLoader）去装载对应的Driver的实现类Class。
 
-![ServiceLoader_ nextService](ServiceLoader_nextService.png)
+![ServiceLoader_ nextService](img/ServiceLoader_nextService.png)
 
 2. 当装载完成后，会触发MySql数据库驱动类`com.mysql.jdbc.Driver`的静态代码块：
    
-![MySqlDriver.png](MySqlDriver.png)
+![MySqlDriver.png](img/MySqlDriver.png)
    
 3. 接着调用DriverManager.registerDriver将数据库驱动实现类添加DriverManager的驱动清单中。
    
-![DriverManager.registerDriver.png](DriverManager.registerDriver.png)
+![DriverManager.registerDriver.png](img/DriverManager.registerDriver.png)
    
 4. 致此，利用DriverManager.getConnection()去获取数据库连接时就能顺利成章的拿到对应的驱动类了。
    
-![DrIverManager.getConnection.png](DrIverManager.getConnection.png)
+![DrIverManager.getConnection.png](img/DrIverManager.getConnection.png)
 
 纵观JDK提供的SPI机制，由于DriverManager是rt.jar中的类，是由BootStrapClass进行装载的，而DriverManager在BootStrapClassLoader装载的时候却去利用线程上下文中的ClassLoader去装载Mysql数据库的驱动类，
 这样就违背的了双亲委派的机制的原则。
