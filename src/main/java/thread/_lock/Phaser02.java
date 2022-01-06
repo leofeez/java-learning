@@ -52,7 +52,7 @@ public class Phaser02 {
                     System.out.println();
                     return false;
                 case 3:
-                    System.out.println("婚礼结束！新郎新娘抱抱！" + Thread.currentThread().getName() + registeredParties);
+                    System.out.println("婚礼结束！新郎新娘抱抱！" + Thread.currentThread().getName());
                     return true;
                 default:
                     return true;

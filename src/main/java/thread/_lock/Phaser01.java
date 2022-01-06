@@ -1,5 +1,6 @@
 package thread._lock;
 
+import java.lang.reflect.Field;
 import java.util.concurrent.Phaser;
 
 public class Phaser01 extends Thread {
@@ -31,21 +32,44 @@ public class Phaser01 extends Thread {
         @Override
         protected boolean onAdvance(int phase, int registeredParties) {
             switch (phase) {
-                case 0:
+                case Phase.ARRIVAL:
                     System.out.println("所有人到齐，准备！" + registeredParties);
                     return false;
-                case 1:
-                    System.out.println("致辞完毕！" + registeredParties);
+                case Phase.SING:
+                    System.out.println("歌唱环节结束！" + registeredParties);
                     return false;
-                case 2:
-                    System.out.println("所有人回家！" + registeredParties);
+                case Phase.EAT:
+                    System.out.println("宴席结束！" + registeredParties);
                     return false;
-                case 3:
+                case Phase.CLEAN:
                     System.out.println(Thread.currentThread().getName() + "打扫卫生！" + registeredParties);
                     return true;
                 default:
                     return true;
             }
+        }
+    }
+
+    static class Phase {
+        public static final int ARRIVAL = 0;
+        public static final int SING = 1;
+        public static final int EAT = 2;
+        public static final int CLEAN = 3;
+
+        public static String of(int phase) {
+            Phase p = new Phase();
+            for (Field field : Phase.class.getFields()) {
+                Object v;
+                try {
+                    v = field.get(p);
+                    if (v instanceof Integer && v.equals(phase)) {
+                        return field.getName();
+                    }
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                }
+            }
+            return "";
         }
     }
 
@@ -58,28 +82,29 @@ public class Phaser01 extends Thread {
 
         public void arrived() {
             System.out.println(Thread.currentThread().getName() + "到了!");
-            partyPhaser.arriveAndAwaitAdvance();
+            int nextPhase = partyPhaser.arriveAndAwaitAdvance();
+            System.out.println(Thread.currentThread().getName() + "进入下个环节!" + Phase.of(nextPhase));
+
         }
 
         public void startParty() {
-            System.out.println(Thread.currentThread().getName() + "发表致辞!");
+            System.out.println(Thread.currentThread().getName() + "吼了两嗓子!");
             partyPhaser.arriveAndAwaitAdvance();
         }
 
         public void endParty() {
-            System.out.println(Thread.currentThread().getName() + "回家了!");
+            System.out.println(Thread.currentThread().getName() + "吃完了!");
             partyPhaser.arriveAndAwaitAdvance();
         }
 
         public void clean() {
             String threadName = Thread.currentThread().getName();
             if(threadName.equals("A")) {
-//                milliSleep(r.nextInt(1000));
-                System.out.printf("%s 拿起扫把！\n", this.name);
+                System.out.printf("%s 留下来打扫卫生并拿起扫把！\n", this.name);
                 partyPhaser.arriveAndAwaitAdvance();
             } else {
-                System.out.println(partyPhaser.arriveAndDeregister());
-                //phaser.register()
+                System.out.println(Thread.currentThread().getName() + "拍拍屁股走人了！");
+                partyPhaser.arriveAndDeregister();
             }
         }
 

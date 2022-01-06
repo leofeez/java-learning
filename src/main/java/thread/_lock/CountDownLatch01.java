@@ -10,23 +10,19 @@ import java.util.concurrent.CountDownLatch;
  */
 public class CountDownLatch01 extends Thread {
 
-    public CountDownLatch01(Runnable target) {
-        super(target);
+    public CountDownLatch01(Runnable target, String name) {
+        super(target, name);
     }
 
     public static void main(String[] args) {
         CountDownLatch01[] threads = new CountDownLatch01[10];
         final CountDownLatch latch = new CountDownLatch(threads.length);
+        System.out.println("大巴车一共有 " + latch.getCount() + " 个座位");
         for (int i = 0; i < 10; i++) {
             threads[i] = new CountDownLatch01(() -> {
-                try {
-                    System.out.println("子线程" + Thread.currentThread().getName() + "开始执行");
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                System.out.println(Thread.currentThread().getName() + "已经上车，并占了一个位置");
                 latch.countDown();//当前线程调用此方法，则计数减一
-            });
+            }, "乘客 " + i);
         }
 
         for (CountDownLatch01 thread : threads) {
@@ -34,7 +30,7 @@ public class CountDownLatch01 extends Thread {
         }
         try {
             latch.await();//阻塞当前线程，直到计数器的值为0
-            System.out.println("主线程" + Thread.currentThread().getName() + "结束...");
+            System.out.println("剩余座位 " + latch.getCount() + " 个座位，坐稳了，要发车了...");
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
