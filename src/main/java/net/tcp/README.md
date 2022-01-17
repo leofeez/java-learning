@@ -59,3 +59,73 @@ HTTP/1.1中可以以某种方式声明这个连接一直保持，一个请求传
 
 
 > 互联网间的通信，TCP/IP协议基于下一跳机制
+
+
+
+
+## 基于四层的负载均衡 LVS 
+
+- NAT协议
+- DR 模型
+
+### 负载均衡的调度算法
+
+- 静态调度
+1. rr: 轮循
+2. wrr
+
+- 动态调度
+1. lc : 最少连接
+   负载均衡服务器如何知道哪台服务器的连接数是最少的？
+   * 通过三次握手的流程记录，记录第一次SYN和第三次ACK
+   * 通过四次次握手的流程记录，记录第二次ACK和第四次ACK
+2. wlc: 加权最少连接
+3. sed: 最短期望延迟
+4. nq: never queue 
+5. LBLC: 基于本地的最少连接
+6. DH
+7. LBLCR: 基于本地的带复制功能的最少连接
+
+### 搭建LVS负载均衡
+1. 安装内核交互的软件 `yum install ipvsadm -y `
+2. 管理集群服务 `ipvsadm -A -t|u|f <service-address> -s rr`
+   * -A 添加, -D 删除 , -E 修改
+   * -t|u|f -t: TCP,-u UDP, -f 防火墙标记
+   *  -s 调度算法，rr: 轮循
+   
+如：`ipvsadm -A -t 192.168.100.1 -s rr`
+   
+3. 管理集群服务的RS服务器` ipvsadm -a -t|u|f <service-address> -r <server-address> [-g|i|m] [-w weight]`
+   * -a 添加
+   * -t|u|f service-address 事先定义好的负载均衡的服务
+   * -r server-address 某RS的服务器地址， 在NAT模型中，可以使用IP:PORT 实现端口映射
+   * `[-g|i|m]`: LVS 类型 -g: DR，-i: TUN, -m: NAT
+   * `[-w weight]` 权重
+   
+如： `ipvsadm -a -t 192.168.100.1 -r 192.168.10.1 -g `
+
+4. 保存规则配置 ipvsadm -S > <filepath>
+
+#### 问题
+1. LVS 宕机之后，整个服务就不可用，因为从客户端请求的目标IP为LVS服务器的IP，虽然服务器仍然存活，但是客户端无法直接访问到应用服务器。
+   解决办法：单点故障，多点
+   - 主备
+   * 方向性： a) 备用主机主动轮循 b) 主机主动广播
+   * 效率性：
+2. 远程服务器其中某一台宕机之后，LVS还是会继续对这台已经宕机的服务器进行负载，导致部分客户端会访问失败。
+   如何确定RS宕机？ 发送请求，服务器返回200 ok，不能用PING，PING只是网络层
+   
+以上问题自动化解决方案 -> keepalived
+
+### Keepalived
+- 监控自己服务
+- Master 通告自己还活着，Backup 监听Master是状态，Master 挂了，Backup 选举一个新的Master
+- 配置 vip 添加ipvs keepalive 有配置
+- 对后端服务器server 做健康检查
+
+keepalived 是一个通用的工具，主要作为HA实现
+
+nginx 可以作为公司的负载均衡来用，nginx 成为了单点故障也可以使用keepalived解决。
+
+
+
