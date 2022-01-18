@@ -56,6 +56,13 @@ class DateUtilsTest {
         System.out.println("根据毫秒获取当前时间：" + dateTime);
     }
 
+    static void betweenDays() {
+        LocalDate from = DateUtils.of(2018, 11, 20);
+        LocalDate to = DateUtils.of(2022, 1, 18);
+        long i = DateUtils.betweenDays(from, to);
+        System.out.println(from + " 和 " + to + " 相差 " + i + " 天");
+    }
+
     public static void main(String[] args) {
         nowDate();
         nationalDayOfYear();
@@ -68,5 +75,6 @@ class DateUtilsTest {
 
         nowDateTime();
         convertFromMilliSecond(System.currentTimeMillis());
+        betweenDays();
     }
 }

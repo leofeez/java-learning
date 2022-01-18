@@ -3,6 +3,8 @@ package date;
 import java.text.SimpleDateFormat;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalUnit;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -66,7 +68,7 @@ public class DateUtils {
      * 当前时间（HH:mm:ss.nnn）
      */
     public static LocalTime nowTime() {
-        return LocalTime.now(Clock.systemDefaultZone());
+        return LocalTime.now(ZoneId.systemDefault());
     }
 
     /**
@@ -118,6 +120,18 @@ public class DateUtils {
 
     public static DateTimeFormatter getNewFormatter(String pattern) {
         return DateTimeFormatter.ofPattern(pattern);
+    }
+
+    public static LocalDate of(int year, int month, int days) {
+        return LocalDate.of(year, month, days);
+    }
+
+    public static long betweenDays(LocalDate from , LocalDate to) {
+        return ChronoUnit.DAYS.between(from, to);
+    }
+
+    public static long betweenMonths(LocalDate from , LocalDate to) {
+        return ChronoUnit.MONTHS.between(from, to);
     }
 
     /**
