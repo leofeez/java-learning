@@ -2,7 +2,7 @@
 实现于Map接口，是一种存储key-value对的容器。
 底层数据结构为哈希表，数组，链表，红黑树（当链表的长度大于等8时，链表会转换为红黑树结构）。
 数组和链表都有其各自的优点和缺点，数组连续存储，寻址容易，插入删除操作相对困难；而链表离散存储，寻址相对困难，而插入删除操作容易；
-而HashMap结合了这两种数据结构，保留了各自的优点，又弥补了各自的缺点
+而HashMap结合了这两种数据结构，保留了各自的优点，又弥补了各自的缺点。
 
 
 #### HashMap重要的几个属性：
@@ -99,19 +99,17 @@ HashMap其实就是哈希表，而哈希表数据结构的优点就是存储元�
 关于上述源码即可以拿到大于给定的`cap`最接近的2的幂次方整数。
 
 关于HashMap的容量为什么要设置为2的幂次方整数，其实具体原因需要结合HashMap在put元素的操作，HashMap在putVal的时候需要计算table的index，
-即entry桶在table的索引，计算index的原理就是利用(capacity -1) & hash，当容量capacity设置为2的幂次方时，(capacity-1)之后的二进制码
-最高为之后可以保证全是1，如：
+即entry桶在table的索引，计算index的原理就是利用(capacity -1) & hash，当容量capacity设置为2的幂次方时，(capacity-1)之后的二进制码最高位之后可以保证全是1，如：
+
  - 容量为8， 对应的7 的二进制码为0000 0111
  - 容量为16，对应的15的二进制码为0000 1111
 
 这样对hashCode进行按位与&计算之后可以保证结果既可以是基数也可以是偶数，而且结果和hashCode的后几位有关系，只要对应的key的hashCode算法足够好，就可以有效减少hash碰撞的几率。
 
-HashMap在初始化建议根据实际情况设置初始容量大小，实际上HashMap会采用第一个大于该数值的2的幂作为初始化容量，指定初始化容量可以有效减少HashMap的扩容resize次数，因为在进行扩容时会导致重建hash表，重建hash表需要重新计算这些数据在新table数组中的位置并进行复制处理。
+HashMap在初始化建议根据实际情况设置初始容量大小，指定初始化容量可以有效减少HashMap的扩容resize次数，因为在进行扩容时会导致重建hash表，重建hash表需要重新计算这些数据在新table数组中的位置并进行复制处理，实际上HashMap会采用第一个大于指定数值的2的幂作为初始化容量。
 
 #### HashMap的哈希算法
-在HashMap添加元素的时候需要根据key计算对应的hashCode然后再确定该元素对应的数组下标，计算下标的算法为`(capacity -1) & hash`，
-其中`capacity`设置为2的幂次方整数是为了减少hash冲突的第一步，在HashMap的哈希算法中对key的hashCode也进行了一些处理，
-HashMap的hash算法源码如下：
+在HashMap添加元素的时候需要根据key计算对应的hashCode然后再确定该元素对应的数组下标，计算下标的算法为`(capacity -1) & hash`，其中`capacity`设置为2的幂次方整数是为了减少hash冲突的第一步，在HashMap的哈希算法中对key的hashCode也进行了一些处理，HashMap的hash算法源码如下：
 ```java
     static final int hash(Object key) {
         int h;
@@ -119,15 +117,16 @@ HashMap的hash算法源码如下：
     }
 ```
 引用自[HashMap的hash算法](https://www.cnblogs.com/LiaHon/p/11149644.html)
-为了减少hash碰撞的几率，HashMap并不是直接用key.hashCode()作为hash值，而是通过上述的hash(Object key)算法将
-hashcode 与 hashcode的低16位做异或运算，混合了高位和低位得出的最终hash值，冲突的概率就小多了。
+
+> 为了减少hash碰撞的几率，HashMap并不是直接用key.hashCode()作为hash值，而是通过上述的hash(Object key)算法将
+> hashcode 与 hashcode的低16位做异或运算，混合了高位和低位得出的最终hash值，冲突的概率就小多了。
 
 举个例子：
 >有个蒸笼，第一层是猪肉包、牛肉包、鸡肉包，第二层是白菜包，第三层是豆沙包，第四层是香菇包。这时你来买早餐，你指着第一层说除了猪肉包，随便给我一个包子，
 因为外表无法分辨，这时拿到猪肉包的概率就有1/3，如果将二层、三层、四层与一层混合在一起了，那么拿到猪肉包的概率就小多了。
 
 我们的hash(Object key)算法一个道理，最终的hash值混合了高位和低位的信息，掺杂的元素多了，那么最终hash值的随机性越大，
-而HashMap的table下标依赖于最终hash值与capacity-1的&运算，这里的&运算类似于挑包子的过程，自然冲突就小得多了。
+而HashMap的table下标依赖于`最终hash值`与`capacity-1的&运算`，这里的&运算类似于挑包子的过程，自然冲突就小得多了。
 
 计算过程如下：
 ```
@@ -155,7 +154,7 @@ HashMap对table的初始化是在第一次put元素的时候，HashMap进行put�
     - 如果table对应的元素不为null，这时候说明产生了hash碰撞，而HashMap对hash碰撞的处理方式是利用链表或者红黑树，
         当table对应的元素为TreeNode，则放置到红黑树对应的节点，如果不是红黑树结构，这时候就需要遍历链表
         * 遍历链表时发现对应的key已经存在，则进行value覆盖
-        * 遍历链表时发现对应的key不存在，则新建一个节点追加到链表的尾部，当追加后的链表长度大于树形阈值，则将链表转换为红黑树。
+        * 遍历链表时发现对应的key不存在，则新建一个节点追加到链表的尾部，当追加后的链表长度大于树形阈值`TREEIFY_THRESHOLD`，则将链表转换为红黑树。
 3. 添加元素后如果table的长度大于扩容的阈值threshold，则进行resize扩容。
 ```java
     public V put(K key, V value) {
@@ -329,6 +328,10 @@ final Node<K,V>[] resize() {
 - 1.7 中 HashMap的底层实现是数组 + 单链表，1.8底层实现增加了红黑树，当链表的长度大于等于8（默认）时将链表转换为红黑树。
 - 1.7 中 HashMap的链表使用头插法，多线程的情况下可能会产生链表的闭环，导致死循环，1.8之后，链表添加元素使用尾插法。
 
+#### 1.7 中HashMap添加元素导致死循环
+
+![JDK1.7_HashMap死循环.png](JDK1.7HashMap死循环.jpeg)
+
 #### HashMap和HashTable的区别
 HashTable:
 - 继承于`Dictionary`类
@@ -341,5 +344,5 @@ HashMap:
 - 继承于 `AbstractMap`类
 - 非线程安全的
 - key 和 value 可以为 `null`
-- 默认的初始容量为16，负载因子为0.75，扩容的阈值为 capacity * loadFactor
+  - 默认的初始容量为16，负载因子为0.75，扩容的阈值为`capacity * loadFactor`
 - 扩容机制为原容量的两倍
