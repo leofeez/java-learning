@@ -157,5 +157,16 @@ keepalived 是一个通用的工具，主要作为HA实现
 
 nginx 可以作为公司的负载均衡来用，nginx 成为了单点故障也可以使用keepalived解决。
 
+#### 搭建keepalived
+
+1. yum install keepalived -y 
+2. 配置
+   - /etc/keepalived/
+   - 备份配置文件 cp keepalived.conf keepalived.conf.bak 
+   - vi keepalived.conf
+   - 找到配置项 vrrp_instance 虚拟路由冗余
+   - yum install man(帮助文档程序) -> man 5 keepalived.conf(查看keepalived.conf的帮助文档)
+   - 
+   
 
 
