@@ -83,19 +83,20 @@ ip是端点间的，mac地址是节点间的
 源 端口
 源 MAC
 
+## ARP协议
+地址解析协议，即ARP（Address Resolution Protocol），是根据IP地址获取物理地址的一个TCP/IP协议。主机发送信息时将包含目标IP地址的ARP请求广播到局域网络上的所有主机，并接收返回消息，以此确定目标的物理地址；收到返回消息后将该IP地址和物理地址存入本机ARP缓存中并保留一定时间，下次请求时直接查询ARP缓存以节约资源。
 
 ## NAT协议
+NAT协议, NAT（Network Address Translation），是指网络地址转换。
 
-## ARP协议
-
-## 
+## DR
 
 
 
 
 ## 基于四层的负载均衡 LVS 
 
-- NAT协议
+- 
 - DR 模型
 
 ### 负载均衡的调度算法
