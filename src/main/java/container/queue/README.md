@@ -27,22 +27,29 @@ Queue还有个子接口为Deque，和Queue不同的是Deque支持左右两边都
 - peekFirst()
 - peekLast()
 
+## BlockingQueue
+BlockingQueue提供了线程安全的阻塞队列
+
+- put(e) : 当试图往已经满了的队列中添加元素，就会阻塞
+- take() : 当队列已经空了，就会阻塞
+
+### LinkedBlockingQueue
+容量最大为Integer.MAX_VALUE ,对线程友好的消费者/生产者模式：
+
+### ArrayBlockingQueue
+初始化时必须指定容量
+
 ## ConcurrentLinkedQueue
-poll()：底层利用了CAS无锁的操作
-
-## LinkedBlockingQueue
-对线程友好的消费者/生产者模式：
-put:当容器满了线程就会阻塞
-take：当容器空了，线程就会阻塞
-
+底层利用了CAS无锁的操作
 
 ## Queue 和 List 的区别
+Queue的数据结构是一个队列，即从头部添加，从尾部移除，以先进先出的方式进行数据管理
 
 ## DelayQueue
 按照在队列中等待的时间进行排序，适用场景就是按时间调度任务。
 
 ## PriorityQueue
-排序
+支持排序的队列，可以指定Comparator，或者元素实现Comparable接口
 
 ## SynchronousQueue
 put进元素之后就等待消费者去take，如果消费者不进行消费则主线程就会等待。所以容量会一直为0
