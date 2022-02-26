@@ -43,15 +43,14 @@ HashEntry数组，用于存储对应的key-value，而且Segment还继承了Reen
 
 下面通过JDK1.7中的ConcurrentHashMap源码来一探究竟：
 
-1. 第一步根据对应的key确定Segment，如果没有，则新建Segment并通过CAS设置到Segment数组中
-![ConcurrentHashMap#ensureSegment.png](img/ConcurrentHashMap-put.png)
+1. 第一步根据对应的key做hash运算，确定Segment，如果没有，则新建Segment并通过CAS设置到Segment数组中
+![ConcurrentHashMap#ensureSegment.png](img/concurrenthashmap/ConcurrentHashMap-put.png)
    
 2. 第二步利用确定的Segment进行put操作
-    2-1. 第一步尝试去获取锁，如果获取成功
-    2-2. 
-![ConcurrentHashMap-Segment-put.png](img/ConcurrentHashMap-Segment-put.png)
+    2-1. 首先尝试去获取锁，如果获取成功，表明当前Segment无线程竞争
+    2-2. 如果获取锁失败，则存在线程竞争，这时候就采用重试机制
+![ConcurrentHashMap-Segment-put.png](img/concurrenthashmap/ConcurrentHashMap-Segment-put.png)
+![ConcurrentHash_scanAndLockForPut.png.png](img/concurrenthashmap/ConcurrentHash_scanAndLockForPut.png)
    
-
-
 
 在JDK1.8中，对ConcurrentHashMap又进一步进行了优化，抛弃了Segment分段锁的模式，利用CAS + synchronized 的方式保证线程安全。

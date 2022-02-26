@@ -1,8 +1,11 @@
 # Map
 
+## HashMap
+
 ## HashTable
 
-## HashMap
+## SynchronizedMap
+SynchronizedMap是Collections的一个静态内部类
 
 ## ConcurrentHashMap
 支持高并发，在多线程的情况下读取效率高，但是插入的效率并不一定比HashTable或者Collections.synchronizedMap高
