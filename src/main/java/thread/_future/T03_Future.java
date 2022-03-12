@@ -1,4 +1,4 @@
-package thread.thread_pool;
+package thread._future;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit;
  * @author leofee
  * @date 2021/3/17
  */
-public class T02_Future {
+public class T03_Future {
 
     public static void main(String[] args) throws InterruptedException {
         ExecutorService executorService = Executors.newFixedThreadPool(2);

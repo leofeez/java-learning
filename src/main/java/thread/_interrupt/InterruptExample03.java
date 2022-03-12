@@ -31,16 +31,15 @@ public class InterruptExample03 {
         @Override
         public void run() {
             try {
-                for (int i = 0; i < 1000000; i++) {
-                    if (Thread.currentThread().isInterrupted()) {
-                        System.out.println(Thread.currentThread().getName() + "接收到停止信号......");
-                        throw new InterruptedException();
-                    }
-                    System.out.println(i);
+                while (!Thread.currentThread().isInterrupted()) {
+                    TimeUnit.SECONDS.sleep(1);
                 }
+                System.out.println(Thread.currentThread().getName() + "接收到停止信号......");
                 System.out.println("线程正常结束......");
+                return;
             } catch (InterruptedException e) {
                 System.out.println("线程通过exception提前结束......");
+                throw new RuntimeException("线程被动停止", e);
             }
 
         }

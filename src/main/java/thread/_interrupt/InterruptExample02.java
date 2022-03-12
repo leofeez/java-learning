@@ -33,14 +33,11 @@ public class InterruptExample02 {
         @Override
         public void run() {
             System.out.println("线程开始执行......");
-            while (true) {
-                if (Thread.currentThread().isInterrupted()) {
-                    System.out.println("接收到停止信号......");
-                    break;
-//                    或者 return;
-                }
+            while (!Thread.currentThread().isInterrupted()) {
                 System.out.println(count.incrementAndGet());
             }
+            System.out.println("接收到停止信号......");
+            return;
         }
     }
 }
