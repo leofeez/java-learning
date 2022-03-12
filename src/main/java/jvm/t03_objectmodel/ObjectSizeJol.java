@@ -1,6 +1,6 @@
 package jvm.t03_objectmodel;
 
-import org.openjdk.jol.info.ClassLayout;
+//import org.openjdk.jol.info.ClassLayout;
 
 /**
  * 利用JOL类库打印对象的大小
@@ -21,6 +21,6 @@ public class ObjectSizeJol {
 
     public static void main(String[] args) {
         Object o = new Object();
-        System.out.println(ClassLayout.parseInstance(o).toPrintable());
+//        System.out.println(ClassLayout.parseInstance(o).toPrintable());
     }
 }

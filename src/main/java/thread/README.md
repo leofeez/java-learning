@@ -15,20 +15,13 @@
 线程的启动：new Thread(runnable).start();
 如果多次调用start()则会抛出 IllegalThreadStateException;
 
-## sleep yield join
-- sleep: 线程休眠，`Thread.sleep(1000)/ TimeUnit.SECONDS.sleep(1)`
-- yield: 使当前线程由执行状态，变成为就绪状态(Runnable)，让出cpu时间，在下一个线程执行时候，此线程有可能被执行，也有可能没有被执行。
-- join : 当我们调用某个线程的这个方法时，这个方法会挂起调用线程，直到被调用线程结束执行，调用线程才会继续执行。在很多情况下，主线程创建了子线程，如果子线程需要进行大量耗时的计算，而主线程需要等待子线程的执行完成之后才能执行，这时候就可利用join()。
-
-join()方法内部使用了wait()，也就是说join()方法会释放锁。但是这里需要注意的是，**释放的锁对象必须是线程实例**，其他的对象实例是不会释放锁的。
-
-线程的六种状态：
-- new：当创建线程时，线程就处于new新建状态
+## 线程的五种状态：
+- new：当创建线程时，线程就处于new新建状态，此时线程还没有开始执行运行线程中的代码。
 - runnable:就绪状态，当创建的线程调用start()方法表示线程处于就绪状态，等待系统调度。
 - running: 运行状态，就绪状态的线程获得CPU资源时进入运行状态，Running和Runnable状态可以互相切换，有可能线程Running一段时间后被某个高
-优先级的线程强占了CPU的资源，此时线程就从Running状态转变为Runnable状态。
+  优先级的线程强占了CPU的资源，此时线程就从Running状态转变为Runnable状态。
 - waiting: 调用wait()，当前线程放弃CPU资源，进度线程等待池中，这种状态线程无法自动唤醒，需要等待其他线程调用notify()或者notifyAll()，
-还有就是join()，sleep()方法或者遇到一个阻塞的IO操作。
+  还有就是join()，sleep()方法或者遇到一个阻塞的IO操作。
 - time_waiting: join(time), sleep(time)
 - blocked：阻塞状态，线程尝试获取同步锁，若同步锁正在被其他线程持有，从而进入阻塞状态。
 - terminated：指线程执行完了或者线程执行时发生了异常
@@ -42,6 +35,15 @@ join()方法内部使用了wait()，也就是说join()方法会释放锁。但�
 - 随机性：高优先级的线程不一定会比低优先级的线程先执行完。
 
 守护线程Daemon线程：是一种特殊的线程，当进程中不存在非守护线程，则守护线程会自动销毁，最典型的如GC垃圾回收线程。
+
+## sleep yield join
+- sleep: 线程休眠，`Thread.sleep(1000)/ TimeUnit.SECONDS.sleep(1)`
+- yield: 使当前线程由执行状态，变成为就绪状态(Runnable)，让出cpu时间，在下一个线程执行时候，此线程有可能被执行，也有可能没有被执行。
+- join : 当我们调用某个线程的这个方法时，这个方法会挂起调用线程，直到被调用线程结束执行，调用线程才会继续执行。在很多情况下，主线程创建了子线程，如果子线程需要进行大量耗时的计算，而主线程需要等待子线程的执行完成之后才能执行，这时候就可利用join()。
+
+join()方法内部使用了wait()，也就是说join()方法会释放锁。但是这里需要注意的是，**释放的锁对象必须是线程实例**，其他的对象实例是不会释放锁的。
+
+
 
 ## 停止线程 interrupt
 真正的线程停止包含：
@@ -65,7 +67,7 @@ interrupt()，该方法仅仅是在当前线程打了一个停止的标记，并
 如果某一个资源被多个线程共享，为了避免因为资源抢占导致资源数据错乱，即线程安全问题，这时候需要对线程进行同步，
 那么synchronized就是实现线程同步的关键字，可以说在并发控制中是必不可少的部分。
 
-具体见[synchronized原理分析](https://github.com/leofeez/java-learning/blob/master/src/main/java/thread/_synchronized/README.md)
+具体见[synchronized原理分析](/thread/_synchronized/README.md)
 
 对象的结构一共由4部分组成，markword, 类型指针，实例数据，padding(对齐填充)可以利用JOL类库显示
 
