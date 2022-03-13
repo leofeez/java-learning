@@ -38,7 +38,9 @@ public class InterruptExample03 {
                 System.out.println("线程正常结束......");
                 return;
             } catch (InterruptedException e) {
-                System.out.println("线程通过exception提前结束......");
+                // 在 sleep 方法中抛出 InterruptException 时会清除Thread的interrupted状态
+                System.out.println("线程通过exception提前结束......" + Thread.currentThread().isInterrupted());
+                Thread.currentThread().interrupt();
                 throw new RuntimeException("线程被动停止", e);
             }
 
