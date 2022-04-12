@@ -6,30 +6,28 @@ import java.util.List;
 /**
  * @author leofee
  */
-public class Singleton01 {
+public class Singleton03 {
+    /**
+     * 构造方法私有化
+     */
+    private Singleton03() {}
 
     /**
-     * 1. 构造方法私有化
+     * 3.枚举方式单例
      */
-    private Singleton01() {
+    public enum SingleEnum {
+        INSTANCE ;
+
+        public void hello() {
+            System.out.println("singleton");
+        }
     }
-
-    /**
-     * 饿汉式单例
-     */
-    private static final Singleton01 INSTANCE = new Singleton01();
-
-    public static Singleton01 getInstance() {
-        return INSTANCE;
-    }
-
 
     public static void main(String[] args) throws InterruptedException {
         List<Thread> threadList = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
             threadList.add(new Thread(() -> {
-                Singleton01 instance2 = Singleton01.getInstance();
-                System.out.println(instance2);
+                System.out.println(SingleEnum.INSTANCE);
             }));
         }
         for (Thread thread : threadList) {

@@ -127,7 +127,7 @@ JVM中有三种编译模式
 
 ## 类加载的过程
 
-Loading ->  Linking(verification -> preparation -> resolution) -> Initializing
+`Loading ->  Linking(verification -> preparation -> resolution) -> Initializing`
 
 - Loading: 装载 class 文件到内存。
   * 装载class文件的二进制到内存
@@ -143,11 +143,15 @@ Loading ->  Linking(verification -> preparation -> resolution) -> Initializing
 - Initializing: 赋初始值，执行静态代码块
 
 ## 面试题：对象的创建过程
-1. class loading
-2. class linking (verification, preparation, resolution)
-3. class initializing
+1. class loading，加载class二进制文件到内存中
+2. class linking连接 (verification验证, preparation（替换符号连接为直接引用，如Class，方法，变量）, resolution 静态变量赋默认值)
+3. class initializing(静态变量赋初始值，执行静态代码块)
 4. 申请对象内存
+   1. 如果是大对象，则分配到老年代
+   2. 如果是小对象，则经过逃逸分析，尝试在栈上分配
+   3. 栈上无法分配，则在TLAB线程本地缓存区进行分配
+   4. 最后才是在Eden区进行内存分配
 5. 成员变量赋默认值
 6. 调用构造方法<init>
-  - 成员比那里顺序赋初始值
+  - 成员变量赋初始值
   - 执行构造方法语句

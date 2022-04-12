@@ -187,11 +187,14 @@ Premain-Class: object_agent.ObjectAgent
 ## 对象头MarkWord具体包括什么
 
  分为几种情况讨论：
-    - 无锁状态：
-    - 偏向锁状态：如果对象调用过 identityHashCode，则对象无法进入偏向锁状态
-    - 轻量级锁
-    - 重量级锁
-    - GC标记
+- 无锁状态：对象的HashCode，
+- 偏向锁状态：如果对象调用过 identityHashCode，则对象无法进入偏向锁状态
+- 轻量级锁
+- 重量级锁
+- GC标记
+
+![](MarkWord.png)
+
 对象的hashcode按原始计算System.identityHashCode生成的JVM会将其记录在markword中，但是一旦重写了对象的hashcode方法，则对象的hashcode不会
 存储在markword中
 

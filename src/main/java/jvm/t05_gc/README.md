@@ -94,7 +94,7 @@ TLAB缺省情况下仅占有整个Eden空间的1%，也可以通过选项`-XX:TL
     - 线程私有小对象
     - 无逃逸，只是在一段代码里使用，出了这段代码即无法找到
     - 支持标量替换
-    - 栈上使用直接弹出pop，也不需要垃圾回收器处理
+    - 栈上使用直接弹出pop，也不需要垃圾回收器处理，减小了垃圾回收的压力
     
 3. 如果栈上分配不下，则尝试在线程本地缓存TLAB中分配空间（其实也是Eden区）
     - 多线程的时候不需要竞争Eden区就可以申请空间，提高效率
@@ -371,6 +371,18 @@ ZGC(1ms): ColoredPointers + 写屏障
 Shenandoah: ColoredPointers + 读屏障
 
 1.8 默认的垃圾回收器是 Parallel Scavenge + Parallel Old
+
+### ZGC - Zero Paused Garbage Collector
+ZGC算法采用的是Colored Pointers 颜色指针.
+
+GC信息不像之前的垃圾回收期是将GC信息放置在对象头Markword中，ZGC是将GC信息存储在指针上
+
+- Marked0
+- Marked1
+- Remapped
+- Finalize
+
+ZGC利用了虚拟地址映射的原理
 
 
 #JVM 调优
