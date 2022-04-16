@@ -1,0 +1,61 @@
+package design.factory.spring;
+
+
+import design.factory.spring.other.ApplicationContext;
+import design.factory.spring.other.ApplicationContextAware;
+import design.factory.spring.product.Cpu;
+
+import java.util.*;
+
+/**
+ * 策略工厂
+ *
+ * @author leofee
+ */
+//@Component
+public class StrategyFactory implements ApplicationContextAware, InitializingBean {
+
+    private static ApplicationContext applicationContext;
+
+    /**
+     * 策略类型清单
+     * 若需要添加新的策略接口，则添加对应的接口类型即可（前提：策略接口必须继承 {@link Strategy}）
+     * <pre>{@code
+     *      strategyTypes.add(NewStrategy2.class);
+     *      strategyTypes.add(NewStrategy3.class);
+     *      strategyTypes.add(NewStrategy4.class);
+     * }</pre>
+     */
+    static Set<Class<? extends Strategy<?>>> strategyTypes = new HashSet<>();
+
+    static {
+        strategyTypes.add(Cpu.class);
+    }
+
+    /**
+     * 策略实现清单
+     */
+    static Map<Enum<?>, Strategy<?>> strategyMap = new HashMap<>();
+
+    /**
+     * Spring 容器初始化后装载对应的策略实现到 {@code strategyMap} 中
+     */
+    @Override
+    public void afterPropertiesSet() {
+        for (Class<? extends Strategy<?>> strategyType : strategyTypes) {
+            Collection<? extends Strategy<?>> strategies =
+                    applicationContext.getBeansOfType(strategyType).values();
+            strategies.forEach(strategy -> strategyMap.put(strategy.identity(), strategy));
+        }
+    }
+
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) {
+        StrategyFactory.applicationContext = applicationContext;
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <I extends Enum<?>, T extends Strategy<?>> T getStrategy(I identity) {
+        return (T) strategyMap.get(identity);
+    }
+}
