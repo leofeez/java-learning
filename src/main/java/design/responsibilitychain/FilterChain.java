@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * 过滤器链
+ *
  * @author leofee
  */
 public class FilterChain {
