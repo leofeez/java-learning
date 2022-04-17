@@ -55,7 +55,22 @@ public class StrategyFactory implements ApplicationContextAware, InitializingBea
     }
 
     @SuppressWarnings("unchecked")
-    public static <I extends Enum<?>, T extends Strategy<?>> T getStrategy(I identity) {
-        return (T) strategyMap.get(identity);
+    public static <I extends Enum<?>, T extends Strategy<I>> T getStrategy(I identity, Class<T> strategyType) {
+        Strategy<?> strategy = strategyMap.get(identity);
+        if (strategy.getClass().isAssignableFrom(strategyType)) {
+            throw new ClassCastException("strategy name " + identity.name() + " found strategy instance is " + strategy + ", but class is not same as " + strategyType);
+        }
+        return (T) strategy ;
+    }
+
+    public static <I extends Enum<?>> StrategyAdder addStrategy(I identity, Strategy<?> strategy) {
+        return new StrategyAdder().addStrategy(identity, strategy);
+    }
+
+    static class StrategyAdder {
+        public StrategyAdder addStrategy(Enum<?> identity, Strategy<?> strategy) {
+            strategyMap.put(identity, strategy);
+            return this;
+        }
     }
 }
