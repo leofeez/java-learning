@@ -14,5 +14,8 @@ public class TestChainOfResponsibility {
 
         chain.doFilter(req, res);
 
+        System.out.println(res.username);
+        System.out.println(res.password);
+
     }
 }

@@ -12,7 +12,7 @@ public class UserNameCheckerFilter implements Filter {
 
         req.setUsername(username.replaceAll("fuck", ""));
         chain.doFilter(req, res);
-
+        res.setUsername(req.getUsername());
         System.out.println("username checker filter end");
 
     }
