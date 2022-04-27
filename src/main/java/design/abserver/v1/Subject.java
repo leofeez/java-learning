@@ -1,9 +1,11 @@
-package design.abserver;
+package design.abserver.v1;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * 被观察者抽象类，被观察者拥有观察者的清单
+ *
  * @author leofee
  */
 public abstract class Subject {

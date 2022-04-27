@@ -1,6 +1,8 @@
-package design.abserver;
+package design.abserver.v1;
 
 /**
+ * 具体的被观察者
+ *
  * @author leofee
  */
 public class Bus extends Subject {

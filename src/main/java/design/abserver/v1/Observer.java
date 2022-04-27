@@ -1,4 +1,4 @@
-package design.abserver;
+package design.abserver.v1;
 
 /**
  * 观察者接口
