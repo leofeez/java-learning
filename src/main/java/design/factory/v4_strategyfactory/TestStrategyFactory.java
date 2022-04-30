@@ -1,7 +1,7 @@
-package design.factory.spring;
+package design.factory.v4_strategyfactory;
 
-import design.factory.spring.product.Cpu;
-import design.factory.spring.product.Keyboard;
+import design.strategy.Cpu;
+import design.strategy.Keyboard;
 
 /**
  * @author leofee

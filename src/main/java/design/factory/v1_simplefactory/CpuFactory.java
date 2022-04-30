@@ -1,4 +1,4 @@
-package design.factory.simplefactory;
+package design.factory.v1_simplefactory;
 
 import design.factory.product.AmdCpu;
 import design.factory.product.CPU;

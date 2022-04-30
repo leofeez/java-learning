@@ -1,4 +1,4 @@
-package design.factory.spring.other;
+package design.factory.v4_strategyfactory.spring;
 
 import java.util.HashMap;
 import java.util.Map;

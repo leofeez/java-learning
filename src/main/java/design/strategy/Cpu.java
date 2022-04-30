@@ -1,6 +1,4 @@
-package design.factory.spring.product;
-
-import design.factory.spring.Strategy;
+package design.strategy;
 
 /**
  * @author leofee
@@ -12,12 +10,23 @@ public interface Cpu extends Strategy<Cpu.Brand> {
         return brand();
     }
 
+    /**
+     * 将品牌作为策略的唯一标识
+     */
     Brand brand();
 
+    /**
+     * CPU的行为
+     */
     void run();
 
+    /**
+     * 品牌枚举
+     */
     enum Brand {
+        /** AMD*/
         AMD,
+        /** Intel*/
         INTEL
     }
 

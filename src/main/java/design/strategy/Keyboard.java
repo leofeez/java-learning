@@ -1,6 +1,4 @@
-package design.factory.spring.product;
-
-import design.factory.spring.Strategy;
+package design.strategy;
 
 /**
  * @author leofee
@@ -22,7 +20,7 @@ public interface Keyboard extends Strategy<Keyboard.KeyBordBrand> {
     void input(String in);
 
 
-    static class DellKeyBoard implements Keyboard {
+    class DellKeyBoard implements Keyboard {
 
         @Override
         public Keyboard.KeyBordBrand brand() {

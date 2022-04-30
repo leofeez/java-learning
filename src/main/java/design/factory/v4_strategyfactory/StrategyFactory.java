@@ -1,14 +1,18 @@
-package design.factory.spring;
+package design.factory.v4_strategyfactory;
 
 
-import design.factory.spring.other.ApplicationContext;
-import design.factory.spring.other.ApplicationContextAware;
-import design.factory.spring.product.Cpu;
+import design.factory.v4_strategyfactory.spring.ApplicationContext;
+import design.factory.v4_strategyfactory.spring.ApplicationContextAware;
+import design.factory.v4_strategyfactory.spring.InitializingBean;
+import design.strategy.Cpu;
+import design.strategy.Strategy;
 
 import java.util.*;
 
 /**
  * 策略工厂
+ *
+ * 将所有继承了{@link Strategy} 接口的策略实现存放在该 Factory 工厂类中
  *
  * @author leofee
  */

@@ -1,4 +1,4 @@
-package design.factory.spring;
+package design.strategy;
 
 /**
  * 策略模式接口

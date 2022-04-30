@@ -1,7 +1,7 @@
-package design.factory.abstractfactory;
+package design.factory.v3_abstractfactory;
 
-import design.factory.abstractfactory.product.Keyboard;
-import design.factory.abstractfactory.product.Mouse;
+import design.factory.product.Keyboard;
+import design.factory.product.Mouse;
 
 /**
  * 为了缩减工厂实现子类的数量，不必给每一个产品分配一个工厂类，

@@ -1,4 +1,4 @@
-package design.factory.simplefactory;
+package design.factory.v1_simplefactory;
 
 class TestSimpleFactory {
 

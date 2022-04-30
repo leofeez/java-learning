@@ -1,4 +1,4 @@
-package design.factory.spring;
+package design.factory.v4_strategyfactory.spring;
 
 /**
  * @author leofee

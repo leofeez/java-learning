@@ -1,4 +1,4 @@
-package design.factory.abstractfactory.product;
+package design.factory.product;
 
 /**
  * @author leofee

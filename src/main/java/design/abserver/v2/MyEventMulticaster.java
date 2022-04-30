@@ -15,7 +15,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class MyEventMulticaster {
 
     AtomicInteger adder = new AtomicInteger(0);
-
+    /**
+     * 利用线程池去执行事件
+     */
     ThreadPoolExecutor executor = new ThreadPoolExecutor(2, 4,
             3600, TimeUnit.SECONDS, new LinkedBlockingQueue<>(1000),
             (r) -> new Thread(r, "MyEventMulticaster-thread-" + adder.incrementAndGet()),
@@ -36,12 +38,18 @@ public class MyEventMulticaster {
         }
     }
 
+    /**
+     * 根据 event 类型判断当前 listener 是否应该监听该事件
+     *
+     * @param listener 监听器
+     * @param event    事件
+     * @return true 支持 / false 不支持
+     */
     private boolean supportEvent(MyEventListener<?> listener, BaseEvent event) {
 
         Class<?>[] interfaces = listener.getClass().getInterfaces();
 
         Type[] genericSuperclass = listener.getClass().getGenericInterfaces();
-
         for (Type superclass : genericSuperclass) {
             if (superclass instanceof ParameterizedType) {
                 ParameterizedType parameterizedType = (ParameterizedType) superclass;

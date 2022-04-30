@@ -14,7 +14,7 @@ public class TestListener {
     }
 
     public static void main(String[] args) throws InterruptedException {
-        Train train = new Train("kitty");
+        Train train = new Train("G8080");
 
         // 火车开动
         TrainStartingEvent event = new TrainStartingEvent(train);

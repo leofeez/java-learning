@@ -1,4 +1,4 @@
-package design.factory.factorymethod;
+package design.factory.v2_factorymethod;
 
 import design.factory.product.AmdCpu;
 import design.factory.product.CPU;
