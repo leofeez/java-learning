@@ -1,6 +1,8 @@
 package design.composite;
 
 /**
+ * 组合模式
+ *
  * @author leofee
  */
 public class TestComposite {

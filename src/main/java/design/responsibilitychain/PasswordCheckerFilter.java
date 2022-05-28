@@ -10,9 +10,9 @@ public class PasswordCheckerFilter implements Filter {
         String pass = req.getPassword();
         System.out.println("pass checker filter start");
 
-        res.setPassword("***********");
         chain.doFilter(req, res);
 
+        res.setPassword("***********");
         System.out.println("pass checker filter end");
     }
 }
