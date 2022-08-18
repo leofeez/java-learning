@@ -20,7 +20,7 @@ public class JdkDriverInvocationHandler implements InvocationHandler {
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-        System.out.println("客户叫来了JDK代驾");
+        System.out.println("客户叫来了JDK代驾:" + proxy.getClass());
         return method.invoke(customer, args);
     }
 }

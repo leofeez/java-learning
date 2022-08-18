@@ -8,9 +8,9 @@ public class TestProxy {
     public static void main(String[] args) {
         // 顾客
         Customer customer = new Customer();
-        // 外卖小哥
+        // 代驾小哥
         Driver driver = new Driver(customer);
-        // 外卖小哥代客户买东西
+        // 客户喝酒啦，需要代驾开车回家
         driver.drive();
     }
 }
