@@ -1,6 +1,9 @@
 package container.queue;
 
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 
 public class T01_LinkedQueue {
 
@@ -9,12 +12,25 @@ public class T01_LinkedQueue {
     public static void main(String[] args) {
         concurrentLinkedQueue.offerFirst("a");
         concurrentLinkedQueue.offerFirst("b");
+        concurrentLinkedQueue.offerFirst("c");
+        concurrentLinkedQueue.offerFirst("d");
 
-        String peekFirst = concurrentLinkedQueue.peekFirst();
-        System.out.println(peekFirst);
+//        String peekFirst = concurrentLinkedQueue.peekFirst();
+//        System.out.println(peekFirst);
+//
+//        concurrentLinkedQueue.offerLast("e");
+//        concurrentLinkedQueue.offerLast("f");
 
-        concurrentLinkedQueue.offerLast("c");
-        concurrentLinkedQueue.offerLast("d");
+        System.out.println(concurrentLinkedQueue);
+
+
+        List<String> list = new ArrayList<>();
+        list.removeIf(e -> e.equals(""));
+
+        concurrentLinkedQueue.removeIf(s -> s.equals("c"));
+//        for (String s : concurrentLinkedQueue) {
+//            if (s.equals("c")) concurrentLinkedQueue.pop();
+//        }
 
         String peekLast = concurrentLinkedQueue.peekLast();
         System.out.println(peekLast);
