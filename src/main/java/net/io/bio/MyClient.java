@@ -1,8 +1,6 @@
 package net.io.bio;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 
@@ -13,13 +11,16 @@ public class MyClient {
 
     public static void main(String[] args) throws IOException {
         Socket socket = new Socket();
-        socket.connect(new InetSocketAddress("127.0.0.1", 8090));
+        socket.connect(new InetSocketAddress("192.168.248.131", 8090));
         while (true) {
-            InputStream in = System.in;
-            byte[] input = new byte[1024];
+            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
             OutputStream outputStream = socket.getOutputStream();
-            while (in.read(input) != -1) {
-                outputStream.write(input);
+            String str;
+            while ((str = reader.readLine()) != null) {
+                System.out.println("读取到内容：" + str);
+                for (int i = 0; i < str.getBytes().length; i++) {
+                    outputStream.write(str.getBytes()[i]);
+                }
             }
         }
     }

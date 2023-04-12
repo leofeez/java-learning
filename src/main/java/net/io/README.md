@@ -68,7 +68,7 @@ CPU计算通过机器语言（如1和0表示）进行计算，
 
 中断向量表
 
-软中断：应用程序int 80
+软中断：应用程序int 80，缺页异常（指的是程序想读写的磁盘中的数据在内存pagecache中不存在，则产生缺页异常，新建页缓存，然后切换为内核态，从磁盘中读取数据填充到页缓存中）
 
 硬中断：时钟中断，IO中断
 
@@ -97,6 +97,15 @@ Linux中文件类型：
 
 通过`read a 0<& 5` 然后`echo $a` 就能看到当前进程的0标准输入从5号文件描述符读取到了a.txt的第一行内容(因为read遇到换行符就会停止)
 
+### Java 中的IO
+
+- BufferedOutputStream 为什么比 FileOutputStream 要快
+
+  FileOutputStream 调用write进行写入的时候每一次调用write就会产生一次系统调用，从而导致用户态和内核态的切换
+
+  BufferedOutputStream 重写了`write(int b);`方法，并且还内置了一个默认大小为8196个字节的缓冲区`byte buf[];`，只有当写入的内存超出了buf[]缓冲区的大小才会flush到磁盘中，这样可以减少系统调用而导致的用户态和内核态的切换。
+- RandomAccessFile 随机读写：在早期的OutputStream都只提供了写入追加的模式，而RandomAccessFile提供了随机读写的能力，通过seek指针可以改变写入的起点。除此之外，RandomAccessFile还能获取到FileChannel，通过FileChannel的map方法能够开启对文件的内存映射
+
 ### 系统调用system call
 
 我们在Linux运行中的程序都是属于用户空间，而Linux中的内核是运行在内核空间，当用户程序是无法直接从物理磁盘中读取数据的，而是需要经过系统调用system call，在进行system call 之前用户空间程序需要发送一个cpu的中断int 0x80，cpu读取到该中断信号之后会去寄存器中根据中断向量表找到对应的中断处理callback，比如保护现场，将用户态切换为内核态，进行内核空间的调用
@@ -105,11 +114,36 @@ Linux中文件类型：
 
 ## pagecahe
 
-内核kernel对内存的管理是以一个个page为单元（4K大小），一个进程对磁盘文件的读写首先会经过系统调用system call ，切换成内核态，然后才能对文件进行读写，而对磁盘的文件读写os操作系统也进行了优化，就是利用pagecache进行页缓存，这样可以有效减少对磁盘的IO次数。
+内核kernel对内存的管理是以一个个page为单元（4K大小），一个进程对磁盘文件的**读/写**首先会经过系统调用system call ，切换成内核态，然后才能对文件进行读写，而对磁盘的文件读写os操作系统也进行了优化，就是利用pagecache进行页缓存，这样可以有效减少对磁盘的IO次数。
 
-如果一个进程需要读取磁盘文件，经过system call 切换内核态后，kernel读取之后会将读取的数据放到内存的pagecache中，而对磁盘文件的写入，kernel内核会优先将写入的数据放入到pagecache中，并且这时候pagecache标记为ditry，当dirty 的 pagecahe的数据大小超过一定的阈值，则kernel 会刷写到磁盘，并且移除pagecache的dirty状态，通过 `sysctl -a | grep dirty`可以查看设置，通过`vi /etc/sysctl.conf` 进行修改，这时候pagecache还是在内存中，只有当内存不够时，才会将那些不是dirty的pagecache从内存中移除（LRU算法），否则会一直在内存中。
+如果一个进程需要读/写磁盘文件，经过system call 切换内核态后，kernel会将数据写入到内存的pagecache中，而对磁盘文件的写入，kernel内核会优先将写入的数据放入到pagecache中，并且这时候pagecache标记为ditry，当dirty 的 pagecahe的数据大小超过一定的阈值，则kernel 会刷写到磁盘，并且移除pagecache的dirty状态。
+
+通过 `sysctl -a | grep dirty`可以查看设置，通过`vi /etc/sysctl.conf` 进行修改
+
+```shell
+vm.dirty_background_bytes = 0
+# 代表当pagecache占用到可用内存的10就会触发操作系统内核将
+# 那些为dirty的pagecache刷写到磁盘
+vm.dirty_background_ratio = 10
+vm.dirty_bytes = 0
+vm.dirty_expire_centisecs = 3000
+# 代表应用程序利用pagecache缓存时，如果达到可用内存的30
+vm.dirty_ratio = 30
+vm.dirty_writeback_centisecs = 500
+
+```
+
+这时候pagecache还是在内存中，只有当内存不够时，才会将那些不是dirty的pagecache从内存中移除（LRU算法），否则会一直在内存中。
 
 虽然pagecache能够优化IO性能，但是由于是缓存，就会存在数据丢失的问题（比如主机突然断电，pagecache中的内容还没来得及刷写到磁盘）。
+
+在用户空间的程序也有可能存在缓存，比如jdk中的BufferedOutputStream就是当写入的时候在进程堆中分配 8K的 buffered来减少系统调用而导致的用户态内核态切换。
+
+物理磁盘硬件也存在缓存策略(计算机 -> 管理 -> 磁盘 -> 右键属性->策略)
+
+![image-20230410223627965](pagecache.png)
+
+## mmap
 
 # 网络IO
 
@@ -125,7 +159,7 @@ tcpdump -nn -i eth0 port 8080: tcp 抓包
 
 服务端启动，则进入LISTEN状态。
 
-客户端和服务端经历三次握手后，就会开辟一定的资源，并建立连接，即使客户端发送了数据到达服务端，服务端还没有分配进程处理，但是数据已经到达**服务端内核**，当服务端进行accept系统调用，就会从系统里面申请一个文件描述符fd代表对应的socket
+客户端和服务端经历三次握手后，就会开辟一定的资源，并建立连接，即使客户端发送了数据到达服务端，服务端还没有accept分配进程处理，但是数据已经到达**服务端内核**，当服务端进行accept系统调用，就会从进程中里面申请一个文件描述符fd用于对建立连接的socket进行读写操作。
 
 socket 四元组：c_ip - c_port - s_ip-s_port
 
@@ -133,11 +167,11 @@ socket 四元组：c_ip - c_port - s_ip-s_port
 
 服务端配置：
 
-- back log:
+- back log: 服务端与客户端产生socket连接积压队列长度，指的是存放SYN_RECV状态(半连接)的与ESTABLISHED状态(已完成3次握手，但是没有被应用调用accept取走的连接)的socket的数量，默认大小是50，当积压的socket已经超出该队列的长度，则服务端会拒绝客户端的连接请求，这样可以避免在服务端繁忙时而大量和建立TCP连接而消耗服务器资源。
 
-TCP中的数据窗口
+TCP中的数据窗口:
 
-TCP拥塞控制
+TCP拥塞控制:
 
 - send buffer
 - tcp no delay: 配置数据包是否立即发送，而不是等待buffer缓冲区满再发送
@@ -153,18 +187,20 @@ Linux 帮助文档 man man， man 2 socket： 查看socket 系统调用
 
 服务端接收客户端连接流程如下：
 
-1. `socket (...) = fd3`系统调用，创建一个文件描述符 fd3，代表客户端和服务端三次握手的Socket
+1. `socket (...) = fd3`系统调用，创建一个文件描述符 fd3，代表服务端进行即将进行LISTEN的Socket
 2. `bind(fd3, 8080)`系统调用绑定 fd3 到指定的监听服务端口上，比如8080
 3. `listen(fd3, 50) ` ，开始监听，服务端为LISTEN状态
 4. 服务端调用`accept(fd3,` 开始阻塞，等待客户端连接
-5. 当有客户端连接到服务端后，`accept(fd3, ....客户端端口，ip)=fd5`调用产生一个新的fd，代表和客户端连接的socket四元组，通过 lsof -p pid 可以查看到对应的文件描述符
+5. 当有客户端连接到服务端后，`accept(fd3, ....客户端端口，ip)=fd5`调用产生一个新的fd，代表和客户端三次握手建立连接的socket四元组，通过 lsof -p pid 可以查看到对应的文件描述符
 6. 服务端抛出一个线程去处理客户端请求，`clone(...)=8447`系统调用创建一个子进程，然后服务端接着进行`accept(fd3,` 阻塞。
 
    这一步 clone 创建新线程的成本很高
 
-   这里为什么服务端需要分配一个线程去处理客户端的请求的原因在于，rcv系统调用读取客户端数据是一个阻塞的过程，如果不单独分配线程去读取客户端数据，那么就会导致服务端的主线程（也就是accept的主线程）被阻塞住，从而无法再继续去监听其他客户端的连接。
+   **这里为什么服务端需要分配一个线程去处理客户端的请求的原因在于，recv系统调用读取客户端数据是一个阻塞的过程，如果不单独分配线程去读取客户端数据，那么就会导致服务端的主线程（也就是accept的主线程）被阻塞住，从而无法再继续去监听其他客户端的连接。**
 
-从BIO模型可以看出，存在很多 blocking 阻塞的点
+从BIO模型可以看出，存在很多 blocking 阻塞的点，这些阻塞的点都会影响处理客户端请求的速度，而且由于服务端主线程只处理accept，对于客户端请求都是采用新建线程或者从线程池中的方式来处理，当大量客户端并发请求压到服务端时，服务端就会消耗大量的时间去进行线程调度，从而浪费服务端资源。
+
+![BIO](bio.png)
 
 ### C10K 问题
 
