@@ -11,7 +11,7 @@ public class MyClient {
 
     public static void main(String[] args) throws IOException {
         Socket socket = new Socket();
-        socket.connect(new InetSocketAddress("192.168.248.131", 8090));
+        socket.connect(new InetSocketAddress("localhost", 8090));
         while (true) {
             BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
             OutputStream outputStream = socket.getOutputStream();
