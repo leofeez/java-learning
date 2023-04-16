@@ -8,7 +8,7 @@ CPU计算的过程其实就是给CPU针脚进行通电断电，
 
 计算机通电 -> CPU读取内存中的程序(电信号的输入) -> 时钟发生器不断震荡通断电->推动CPU一步步执行(执行多少步取决于指令需要的时钟周期)->计算完成->写回电信号->写给输出设备
 
-CPU计算通过机器语言（如1和0表示）进行计算，
+CPU计算通过机器语言（如1和0表示）进行计算。
 
 汇编语言的本质：机器语言的助记符，比如利用 10010101 代表add，000111000 代表 mov等等
 
@@ -62,7 +62,32 @@ CPU计算通过机器语言（如1和0表示）进行计算，
 为了解决上述两个问题，采用了**虚拟地址**，分页装入内存，软硬件结合寻址的方案。
 
 1. 分页：内存中分成固定大小的页框（4K），把硬盘上的程序分成4K大小的块，用到哪块的程序才加载到内存，如果内存已经满了，会将最不常用的(LRU算法)内存页数据放到swap分区（硬盘实现，所以效率低），把最新的一块加载进内存页。
-2. 虚拟内存：让进程工作在虚拟内存空间中，程序中的内存地址不再是直接的物理内存地址，每个进程都虚拟独占整个CPU和内存空间，A进程也永远都访问不到B进程的内存空间，如果当进程需要访问物理内存空间的数据，需要经过MMU内存映射，将虚拟内存地址映射到真是的物理内存地址。
+2. 虚拟内存：让进程工作在虚拟内存空间中，程序中的内存地址不再是直接的物理内存地址，每个进程都虚拟独占整个CPU和内存空间，A进程也永远都访问不到B进程的内存空间，如果当进程需要访问物理内存空间的数据，需要经过MMU内存映射，将虚拟内存地址映射到真实的物理内存地址。
+
+## 内核态用户态
+
+在操作系统当中，程序大致可以分为两种，一种是用户程序，运行在用户态空间，一类是操作系统内核，运行在内核态空间。
+
+操作系统内核管理着CPU调度，内存分配，硬件资源等，操作系统为了保证稳定，这些敏感资源用户空间程序是无法直接访问的，用户空间程序要想访问必须调用内核提供的函数，也就是系统调用，从用户态切换至内核态才能访问这些敏感资源。
+
+用户态切换至内核态需要经历以下步骤：
+
+* 保留用户态现场（上下文、寄存器、用户栈等）
+* 复制用户态参数，用户栈切到内核栈，进入内核态
+* 额外的检查（因为内核代码对用户不信任）
+* 执行内核态代码
+* 复制内核态代码执行结果，回到用户态
+* 恢复用户态现场（上下文、寄存器、用户栈等）
+
+这也是用户态切换内核态的成本。
+
+## 系统调用system call
+
+我们在Linux运行中的程序都是属于用户空间，而Linux中的内核是运行在内核空间，当用户程序是无法直接从物理磁盘中读取数据的，而是需要经过系统调用system call，在进行system call 之前用户空间程序需要发送一个cpu的中断int 0x80，cpu读取到该中断信号之后会去寄存器中根据中断向量表找到对应的中断处理callback，比如保护现场，将用户态切换为内核态，进行内核空间的调用
+
+![system call](systemcall.png)
+
+## pagecahe
 
 #### 中断
 
@@ -89,13 +114,13 @@ Linux中文件类型：
 - p: pipeline 管道
 - event poll
 
-在Lunix中，任何进程的PID都能映射到虚拟文件系统中的某个目录，比如echo $$ 可以看到当前进程的PID，然后通过`cd /proc/{pid}/fd`，目录下都有`0`（标准输入）`<`，`1`（标准输出）`>`，`2`（错误输出）等等文件描述符。
+在Lunix中，任何进程的PID都能映射到虚拟文件系统中的某个目录，比如echo $$ 可以看到当前进程的PID，然后通过 `cd /proc/{pid}/fd`，目录下都有 `0`（标准输入）`<`，`1`（标准输出）`>`，`2`（错误输出）等等文件描述符。
 
 `exec 5< a.txt` : 表示创建一个文件描述符5的输入指向a.txt。
 
-通过`lsof -op $$` 就会看到当前进程下出现了一个5的fd
+通过 `lsof -op $$` 就会看到当前进程下出现了一个5的fd
 
-通过`read a 0<& 5` 然后`echo $a` 就能看到当前进程的0标准输入从5号文件描述符读取到了a.txt的第一行内容(因为read遇到换行符就会停止)
+通过 `read a 0<& 5` 然后 `echo $a` 就能看到当前进程的0标准输入从5号文件描述符读取到了a.txt的第一行内容(因为read遇到换行符就会停止)
 
 ### Java 中的IO
 
@@ -103,22 +128,16 @@ Linux中文件类型：
 
   FileOutputStream 调用write进行写入的时候每一次调用write就会产生一次系统调用，从而导致用户态和内核态的切换
 
-  BufferedOutputStream 重写了`write(int b);`方法，并且还内置了一个默认大小为8196个字节的缓冲区`byte buf[];`，只有当写入的内存超出了buf[]缓冲区的大小才会flush到磁盘中，这样可以减少系统调用而导致的用户态和内核态的切换。
+  BufferedOutputStream 重写了 `write(int b);`方法，并且还内置了一个默认大小为8196个字节的缓冲区 `byte buf[];`，只有当写入的内存超出了buf[]缓冲区的大小才会flush到磁盘中，这样可以减少系统调用而导致的用户态和内核态的切换。
 - RandomAccessFile 随机读写：在早期的OutputStream都只提供了写入追加的模式，而RandomAccessFile提供了随机读写的能力，通过seek指针可以改变写入的起点。除此之外，RandomAccessFile还能获取到FileChannel，通过FileChannel的map方法能够开启对文件的内存映射
 
-### 系统调用system call
-
-我们在Linux运行中的程序都是属于用户空间，而Linux中的内核是运行在内核空间，当用户程序是无法直接从物理磁盘中读取数据的，而是需要经过系统调用system call，在进行system call 之前用户空间程序需要发送一个cpu的中断int 0x80，cpu读取到该中断信号之后会去寄存器中根据中断向量表找到对应的中断处理callback，比如保护现场，将用户态切换为内核态，进行内核空间的调用
-
-![system call](systemcall.png)
-
-## pagecahe
+### Pagecache
 
 内核kernel对内存的管理是以一个个page为单元（4K大小），一个进程对磁盘文件的**读/写**首先会经过系统调用system call ，切换成内核态，然后才能对文件进行读写，而对磁盘的文件读写os操作系统也进行了优化，就是利用pagecache进行页缓存，这样可以有效减少对磁盘的IO次数。
 
 如果一个进程需要读/写磁盘文件，经过system call 切换内核态后，kernel会将数据写入到内存的pagecache中，而对磁盘文件的写入，kernel内核会优先将写入的数据放入到pagecache中，并且这时候pagecache标记为ditry，当dirty 的 pagecahe的数据大小超过一定的阈值，则kernel 会刷写到磁盘，并且移除pagecache的dirty状态。
 
-通过 `sysctl -a | grep dirty`可以查看设置，通过`vi /etc/sysctl.conf` 进行修改
+通过 `sysctl -a | grep dirty`可以查看设置，通过 `vi /etc/sysctl.conf` 进行修改
 
 ```shell
 vm.dirty_background_bytes = 0
@@ -190,9 +209,9 @@ Linux 帮助文档 man man， man 2 socket： 查看socket 系统调用
 1. `socket (...) = fd3`系统调用，创建一个文件描述符 fd3，代表服务端进行即将进行LISTEN的Socket
 2. `bind(fd3, 8080)`系统调用绑定 fd3 到指定的监听服务端口上，比如8080
 3. `listen(fd3, 50) ` ，开始监听，服务端为LISTEN状态
-4. 服务端调用`accept(fd3,` 开始阻塞，等待客户端连接
+4. 服务端调用 `accept(fd3,` 开始阻塞，等待客户端连接
 5. 当有客户端连接到服务端后，`accept(fd3, ....客户端端口，ip)=fd5`调用产生一个新的fd，代表和客户端三次握手建立连接的socket四元组，通过 lsof -p pid 可以查看到对应的文件描述符
-6. 服务端抛出一个线程去处理客户端请求，`clone(...)=8447`系统调用创建一个子进程，然后服务端接着进行`accept(fd3,` 阻塞。
+6. 服务端抛出一个线程去处理客户端请求，`clone(...)=8447`系统调用创建一个子进程，然后服务端接着进行 `accept(fd3,` 阻塞。
 
    这一步 clone 创建新线程的成本很高
 
@@ -208,19 +227,59 @@ Linux 帮助文档 man man， man 2 socket： 查看socket 系统调用
 
 基于OS 的 None Blocking 机制
 
-ServerSocketChannel#accept  设置configureBlocking(false)，非阻塞
+ServerSocketChannel#accept  设置configureBlocking(false)，非阻塞，NIO中的accept不会产生阻塞，如果没有连接，则返回 null
 
-NIO中的accept不会产生阻塞，如果没有连接，则返回-1
+SocketChannel#read(byteBuffer) 设置 configureBlocking(false)，非阻塞，调用read不会产生则，如果没有数据到达，则返回 null
 
-所以相对BIO来看，NIO无需去为每一个连接分配线程去处理，而是通过一个或者N个线程处理即可，这样减少了频繁创建线程的成本。
+```java
+        // 开启服务端
+        ServerSocketChannel serverSocketChannel = ServerSocketChannel.open()
+                .bind(new InetSocketAddress("localhost", 8090));
+        // 1. 设置服务端监听为非阻塞
+        serverSocketChannel.configureBlocking(false);
+        while (true) {
+            try {
+                // 2. 这里accept是非阻塞的
+                SocketChannel clientSocket = serverSocketChannel.accept();
+                System.out.println("client connected = " + clientSocket);
+                if (clientSocket != null) {
+                    clients.add(clientSocket);
+                }
 
-NIO的问题，对于每一个连接，每一次的循环都要去调用一次rcv询问是否有数据到达，这个过程中有很多是无意义的系统调用，**并且需要用户态和内核态的切换**。
+                // 在NIO下，由于是非阻塞的，可以无需抛出新线程去处理客户端请求，直接在当前线程处理即可
+                ByteBuffer byteBuffer = ByteBuffer.allocateDirect(1024);
+                for (SocketChannel client : clients) {
+                    // 设置非阻塞
+                    client.configureBlocking(false);
+                    // 设置非阻塞后，read操作就不会进行阻塞
+                    int read = client.read(byteBuffer);
+                    // 当有数据到达，这里返回值会大于0
+                    if (read > 0) {
+                        // 利用 ByteBuffer 读取数据
+                        byteBuffer.flip();
+                        byte[] data = new byte[byteBuffer.limit()];
+                        byteBuffer.get(data);
+                        System.out.println("接收到：ip:" + client.getRemoteAddress() + ", data:" + new String(data));
+                        byteBuffer.clear();
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+```
+
+所以相对BIO来看，在accept和read两个环节就无需进行阻塞，也无需去为每一个客户端的连接单独分配线程去处理，而是通过一个或者N个线程处理即可，这样减少了频繁创建线程的成本。
+
+![NIO VS BIO](nio.png)
+
+NIO的问题，当连接到服务端的数量越来越多，每一次的循环都要由用户空间进程发起系统调用对客户端的socket进行read查看是否有数据到达，这个过程中有很多socket其实是没有数据到达的，那么这些read就是无意义的系统调用，**并且需要用户态和内核态的切换**。
 
 ## 多路复用器
 
 为了解决NIO中频繁的针对每一个客户端连接进行系统调用询问是否有数据到达而产生了多路复用器。
 
-采用多路复用器，对于N个客户端的连接，只需要进行一次系统调用，将所有的文件描述符一次性交给内核，内核根据用户态传进来的文件描述符进行遍历获取对应的状态，最终返回每一个连接数据到达状态，然后由程序自己再针对性的进行read/write。
+采用多路复用器，对于N个客户端的连接，只需要进行一次系统调用，将所有的文件描述符一次性交给内核，内核根据用户态传进来的文件描述符进行遍历获取对应的状态，最终返回每一个连接数据到达状态，然后由程序自己再针对性的进行read/write，因为针对每一个客户端是否有数据到达，内核kernel是第一个知道的，所以判断客户端socket是否有数据，应该交给kernel去实现，这样可以避免频繁的用户态内核态的切换成本。
 
 在IO层面，只要是程序自身进行R/W，那么IO模型就是同步的：
 
@@ -229,25 +288,37 @@ NIO的问题，对于每一个连接，每一次的循环都要去调用一次rc
 
 在Linux中目前还没有提供内核级的异步IO机制。
 
-多路复用器系统调用有如下三种：man 2 select
+多路复用器系统调用有如下三种：
 
 - select(fds, r_fds, w_fds, timeout)  fds文件描述符不能超过1024
-- poll
+- poll(struct pollfd *fds, nfds_t nfds, int timeout)
 - epoll event poll 基于事件机制
 
-在select和poll两个系统调用中，想要知道每个fd的状态，都要全量的把所有fds都交给内核进行全量的遍历才能够确定fd对应的R/W状态，即复杂度是一次全量的fd遍历。
+可以通过手册查询 man 2 select， man 2 poll, man 2 epoll(man 2 epoll_create, epoll_ctl, epoll_wait)
 
-基于以上的问题，又诞生了epoll，基于事件机制的poll。
+#### select 和 poll 的缺点：
+
+在select和poll两个系统调用中，用户程序想要知道每个fd的状态，**都要用户空间主动把全量的fds都交给内核进行全量的遍历才能够确定fd对应的Ready状态**，即复杂度是一次全量的fds 的遍历，即O(m)。
+
+- 每次用户程序都需要传递全量的fds给内核
+- 内核每次都要对全量的fds进行遍历
+
+![select&poll](select&poll.png)
+
+#### epoll
+
+基于以上的问题，又诞生了epoll，基于事件机制的poll，也就是说，用户空间的fd的状态由用户程序主动系统调用询问转换为由内核主动将Ready状态的fd转移到某个区域（比如说链表空间），然后用户程序只需要去链表空间去处理那些已经是Ready状态的fd即可，而无需将全量的fds交给内核进行遍历。
 
 epoll 主要分为以下三个系统调用：
 
-1. epoll_create：创建文件描述符，用于数据的读写fd
-2. epoll_ctl：在内存空间建立红黑树，将socket的fd和数据读写的fd进行关联，并且在有数据到达之后会将数据读写fd复制到有状态fd的链表空间中。
-3. eopll_wait：从内核处理好有状态的fd链表中获取有状态的fd返回
-
-在最后的epoll_wait获取到有状态的fd之后，应用程序发起read系统调用去读取数据。
+1. epfd = epoll_create()：创建epoll实例并返回一个文件描述符epfd，在内核会开辟空间（红黑树），用于存储需要加入到epoll中的fd（比如服务端LISTEN状态的fd），如果创建失败则返回-1
+2. epoll_ctl(int epfd, int op, int fd, struct epoll_event *event)：将服务端LISTENT 对应的socket的fd和epfd进行绑定，即将fd放入到epoll_create开辟的内核空间，并且当有客户端连接时，内核会将已经准备好R/W的客户端socket fd 转移到一个链表空间（专门存放已经I/O ready的fd）。
+3. eopll_wait：从epoll_ctl中的链表空间获取客户端的fds。
+4. 在最后的epoll_wait获取到有状态的fds之后，应用程序发起read系统调用去读取数据。
 
 epoll 和 select，poll的区别在于：
 
-- select ：用户程序主动进行系统调用，每次都需要全量的遍历所有文件描述符来判断状态
+- select ：用户程序主动进行系统调用将全量的fds传递给内核，而内核每次都需要全量的遍历所有文件描述符来判断状态
 - epoll ：在数据到达后，内核会自动的通过中断回调将有状态的文件描述符放入到一个链表内存空间，这样应用程序只需要遍历链表即可获取有状态的文件描述符，而无需进行全量的遍历
+
+![select poll vs epoll](epoll.png)
