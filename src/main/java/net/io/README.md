@@ -312,7 +312,7 @@ NIO的问题，当连接到服务端的数量越来越多，每一次的循环�
 epoll 主要分为以下三个系统调用：
 
 1. epfd = epoll_create()：创建epoll实例并返回一个文件描述符epfd，在内核会开辟空间（红黑树），用于存储需要加入到epoll中的fd（比如服务端LISTEN状态的fd），如果创建失败则返回-1
-2. epoll_ctl(int epfd, int op, int fd, struct epoll_event *event)：将服务端LISTENT 对应的socket的fd和epfd进行绑定，即将fd放入到epoll_create开辟的内核空间，并且当有客户端连接时，内核会将已经准备好R/W的客户端socket fd 转移到一个链表空间（专门存放已经I/O ready的fd）。
+2. epoll_ctl(int epfd, int op, int fd, struct epoll_event *event)：将服务端LISTENT 对应的socket的fd和epfd进行绑定，即将fd放入到epoll_create开辟的内核空间(红黑树，大小限制在/proc/sys/fs/epoll/max_user_watches)，并且当有客户端连接时，内核会将已经准备好R/W的客户端socket fd 转移到一个链表空间（专门存放已经I/O ready的fd）。
 3. eopll_wait：从epoll_ctl中的链表空间获取客户端的fds。
 4. 在最后的epoll_wait获取到有状态的fds之后，应用程序发起read系统调用去读取数据。
 
@@ -321,4 +321,4 @@ epoll 和 select，poll的区别在于：
 - select ：用户程序主动进行系统调用将全量的fds传递给内核，而内核每次都需要全量的遍历所有文件描述符来判断状态
 - epoll ：在数据到达后，内核会自动的通过中断回调将有状态的文件描述符放入到一个链表内存空间，这样应用程序只需要遍历链表即可获取有状态的文件描述符，而无需进行全量的遍历
 
-![select poll vs epoll](epoll.png)
+![epoll vs poll&select](epoll.png)
