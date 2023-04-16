@@ -40,13 +40,25 @@ public class Select_PollServer {
                     while (iterator.hasNext()) {
                         SelectionKey key = iterator.next();
                         iterator.remove();
+
+                        // true 可以监听客户端连接
                         if (key.isAcceptable()) {
                             handleAccept(key);
                         }
 
+                        // true 表示客户端数据到达
                         if (key.isReadable()) {
+                            key.cancel();
                             handleRead(key);
                         }
+
+                        // true 表示可以写，当send-queue 有空间，该方法就会返回true
+                        if (key.isWritable()) {
+                            key.cancel();
+                            handleWrite(key);
+                        }
+
+
                     }
                 }
             } catch (Exception e) {
@@ -56,8 +68,8 @@ public class Select_PollServer {
 
     }
 
-
     private static void handleAccept(SelectionKey acceptKey) {
+        System.out.println("handle accept ......");
         ServerSocketChannel channel = (ServerSocketChannel) acceptKey.channel();
         try {
             channel.configureBlocking(false);
@@ -77,16 +89,74 @@ public class Select_PollServer {
     }
 
     private static void handleRead(SelectionKey readKey) {
-        SocketChannel channel = (SocketChannel) readKey.channel();
+        System.out.println("handle read ......");
+        SocketChannel client = (SocketChannel) readKey.channel();
         try {
-            channel.configureBlocking(false);
+            client.configureBlocking(false);
             ByteBuffer byteBuffer = (ByteBuffer) readKey.attachment();
-            int read = channel.read(byteBuffer);
-            if (read > 0) {
-                byteBuffer.flip();
-                byte[] data = new byte[byteBuffer.limit()];
-                byteBuffer.get(data);
-                System.out.println("读取客户端：" + channel.getRemoteAddress() + " data: " + new String(data));
+            while (true) {
+                // read 触发的IO，还是会阻塞
+                int read = client.read(byteBuffer);
+                if (read > 0) {
+                    //byteBuffer.flip();
+                    while (byteBuffer.hasRemaining()) {
+                        byte[] data = new byte[byteBuffer.limit()];
+                        // 一旦数据被读完，这个read事件就会被cancel()
+                        //byteBuffer.get(data); //所以要注册写事件
+                        //System.out.println("读取客户端：" + client.getRemoteAddress() + " data: " + new String(data));
+
+                        // 写回客户端
+                        //ByteBuffer writeBuf = ByteBuffer.allocateDirect(data.length);
+                        //writeBuf.put(data);
+                        //writeBuf.flip();
+                        //client.write(writeBuf);
+                        //writeBuf.clear();
+
+                        // 一般客户端发来了数据，我们要写内容给客户端（即：表示请求应答）
+                        // 所以这里注册写事件
+                        client.register(selector, SelectionKey.OP_WRITE, byteBuffer);
+                    }
+                } else if (read == 0) {
+                    break;
+                } else {
+                    client.close();
+                    break;
+                }
+                byteBuffer.clear();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void handleWrite(SelectionKey readKey) {
+        System.out.println("handle write ......");
+        SocketChannel client = (SocketChannel) readKey.channel();
+        try {
+            client.configureBlocking(false);
+            ByteBuffer byteBuffer = (ByteBuffer) readKey.attachment();
+            while (true) {
+                int read = client.read(byteBuffer);
+                if (read > 0) {
+                    byteBuffer.flip();
+                    while (byteBuffer.hasRemaining()) {
+                        byte[] data = new byte[byteBuffer.limit()];
+                        byteBuffer.get(data);
+                        System.out.println("读取客户端：" + client.getRemoteAddress() + " data: " + new String(data));
+
+                        // 写回客户端
+                        //ByteBuffer writeBuf = ByteBuffer.allocateDirect(data.length);
+                        //writeBuf.put(data);
+                        //writeBuf.flip();
+                        //client.write(writeBuf);
+                        //writeBuf.clear();
+                    }
+                } else if (read == 0) {
+                    break;
+                } else {
+                    client.close();
+                    break;
+                }
                 byteBuffer.clear();
             }
         } catch (IOException e) {
