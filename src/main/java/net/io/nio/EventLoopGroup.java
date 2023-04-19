@@ -25,14 +25,9 @@ public class EventLoopGroup {
     public EventLoopGroup(int threadCount) {
 
         for (int i = 0; i < threadCount; i++) {
-            try {
-                Selector selector = Selector.open();
-                EventLoop eventLoop = new EventLoop(selector);
-                eventLoops.add(eventLoop);
-                new Thread(eventLoop, "event loop-" + i).start();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            EventLoop eventLoop = new EventLoop(this);
+            eventLoops.add(eventLoop);
+            new Thread(eventLoop, "event loop-" + i).start();
         }
     }
 
@@ -41,7 +36,7 @@ public class EventLoopGroup {
             SelectableChannel serverSocketChannel = ServerSocketChannel.open()
                     .bind(new InetSocketAddress("192.168.0.103", 8090))
                     .configureBlocking(false);
-            //register(serverSocketChannel);
+            register(serverSocketChannel);
 
         } catch (IOException e) {
             e.printStackTrace();

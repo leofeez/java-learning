@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * 3.枚举方式单例
  * @author leofee
  */
 public class Singleton03 {
@@ -12,9 +13,6 @@ public class Singleton03 {
      */
     private Singleton03() {}
 
-    /**
-     * 3.枚举方式单例
-     */
     public enum SingleEnum {
         INSTANCE ;
 

@@ -16,17 +16,27 @@ public class EventLoop implements Runnable {
 
     LinkedBlockingQueue<Channel> channels = new LinkedBlockingQueue<>();
 
-    public EventLoop(Selector selector) {
-        this.selector = selector;
+    EventLoopGroup group;
+
+    public EventLoop(EventLoopGroup group) {
+        try {
+            this.selector = Selector.open();
+            this.group = group;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 
     @Override
     public void run() {
+        System.out.println("EventLoop " + Thread.currentThread().getName() + " start......");
         while (true) {
             try {
-                System.out.println("EventLoop " + Thread.currentThread().getName() + " start......");
+                System.out.println("EventLoop " + Thread.currentThread().getName() + " begin......" + selector.keys().size());
                 int select = selector.select();
-                System.out.println("EventLoop selected " + select + " ......");
+                System.out.println("EventLoop selected " + select + " keys......" + selector.keys().size());
+                System.out.println("-----------------------------");
                 // select 会阻塞
                 if (select > 0) {
                     Set<SelectionKey> keys = selector.selectedKeys();
@@ -37,7 +47,6 @@ public class EventLoop implements Runnable {
                         if (key.isAcceptable()) {
                             handleAccept(key);
                         } else if (key.isReadable()) {
-                            key.cancel();
                             handleRead(key);
                         } else if (key.isWritable()) {
                             key.cancel();
@@ -70,16 +79,40 @@ public class EventLoop implements Runnable {
     }
 
     private void handleRead(SelectionKey key) {
-
+        System.out.println("handle read ......");
+        SocketChannel client = (SocketChannel) key.channel();
+        try {
+            client.configureBlocking(false);
+            ByteBuffer byteBuffer = (ByteBuffer) key.attachment();
+            byteBuffer.clear();
+            while (true) {
+                // read 触发的IO，还是会阻塞
+                int read = client.read(byteBuffer);
+                if (read > 0) {
+                    byteBuffer.flip();
+                    while (byteBuffer.hasRemaining()) {
+                        client.write(byteBuffer);
+                    }
+                } else if (read == 0) {
+                    break;
+                } else {
+                    key.cancel();
+                    client.close();
+                    break;
+                }
+                byteBuffer.clear();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void handleAccept(SelectionKey key) {
         ServerSocketChannel server = (ServerSocketChannel) key.channel();
         try {
-            ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
             SocketChannel client = server.accept();
-            client.register(selector, SelectionKey.OP_READ, byteBuffer);
-
+            client.configureBlocking(false);
+            group.register(client);
         } catch (IOException e) {
             e.printStackTrace();
         }

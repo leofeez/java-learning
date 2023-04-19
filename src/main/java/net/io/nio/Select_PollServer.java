@@ -33,7 +33,7 @@ public class Select_PollServer {
                 // 如果是select，poll，则系统调用为select(fd4
                 // 如果是epoll，则系统调用为epoll_wait()
                 // timeout = 0 ，则表示阻塞的，但是selector有wakeup()方法，能打断阻塞
-                while (selector.select(500) > 0) {
+                if (selector.select(500) > 0) {
                     // 返回有状态的fds
                     Set<SelectionKey> keys = selector.selectedKeys();
                     Iterator<SelectionKey> iterator = keys.iterator();
@@ -94,35 +94,18 @@ public class Select_PollServer {
         try {
             client.configureBlocking(false);
             ByteBuffer byteBuffer = (ByteBuffer) readKey.attachment();
+            byteBuffer.clear();
             while (true) {
                 // read 触发的IO，还是会阻塞
                 int read = client.read(byteBuffer);
                 if (read > 0) {
-                    //byteBuffer.flip();
-                    while (byteBuffer.hasRemaining()) {
-                        byte[] data = new byte[byteBuffer.limit()];
-                        // 一旦数据被读完，这个read事件就会被cancel()
-                        //byteBuffer.get(data); //所以要注册写事件
-                        //System.out.println("读取客户端：" + client.getRemoteAddress() + " data: " + new String(data));
-
-                        // 写回客户端
-                        //ByteBuffer writeBuf = ByteBuffer.allocateDirect(data.length);
-                        //writeBuf.put(data);
-                        //writeBuf.flip();
-                        //client.write(writeBuf);
-                        //writeBuf.clear();
-
-                        // 一般客户端发来了数据，我们要写内容给客户端（即：表示请求应答）
-                        // 所以这里注册写事件
-                        client.register(selector, SelectionKey.OP_WRITE, byteBuffer);
-                    }
+                    client.register(selector, SelectionKey.OP_WRITE, byteBuffer);
                 } else if (read == 0) {
                     break;
                 } else {
                     client.close();
                     break;
                 }
-                byteBuffer.clear();
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -135,30 +118,20 @@ public class Select_PollServer {
         try {
             client.configureBlocking(false);
             ByteBuffer byteBuffer = (ByteBuffer) readKey.attachment();
-            while (true) {
-                int read = client.read(byteBuffer);
-                if (read > 0) {
-                    byteBuffer.flip();
-                    while (byteBuffer.hasRemaining()) {
-                        byte[] data = new byte[byteBuffer.limit()];
-                        byteBuffer.get(data);
-                        System.out.println("读取客户端：" + client.getRemoteAddress() + " data: " + new String(data));
+            byteBuffer.flip();
+            while (byteBuffer.hasRemaining()) {
+                //byte[] data = new byte[byteBuffer.limit()];
+                //byteBuffer.get(data);
+                //System.out.println("读取客户端：" + client.getRemoteAddress() + " data: " + new String(data));
 
-                        // 写回客户端
-                        //ByteBuffer writeBuf = ByteBuffer.allocateDirect(data.length);
-                        //writeBuf.put(data);
-                        //writeBuf.flip();
-                        //client.write(writeBuf);
-                        //writeBuf.clear();
-                    }
-                } else if (read == 0) {
-                    break;
-                } else {
-                    client.close();
-                    break;
-                }
-                byteBuffer.clear();
+                // 写回客户端
+                //ByteBuffer writeBuf = ByteBuffer.allocateDirect(data.length);
+                //writeBuf.put(data);
+                //byteBuffer.flip();
+                client.write(byteBuffer);
+                //writeBuf.clear();
             }
+            byteBuffer.clear();
         } catch (IOException e) {
             e.printStackTrace();
         }

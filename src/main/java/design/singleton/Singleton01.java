@@ -16,6 +16,7 @@ public class Singleton01 {
 
     /**
      * 饿汉式单例
+     * 在类加载期间就可以进行初始化
      */
     private static final Singleton01 INSTANCE = new Singleton01();
 
